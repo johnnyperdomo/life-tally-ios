@@ -203,10 +203,11 @@ final class LifeTallyStore {
     func addHabit(name: String, details: String, symbolName: String) {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
+        let trimmedSymbolName = symbolName.trimmingCharacters(in: .whitespacesAndNewlines)
         context.insert(TrackedHabit(
             name: trimmedName,
             details: details.trimmingCharacters(in: .whitespacesAndNewlines),
-            symbolName: symbolName
+            symbolName: trimmedSymbolName.isEmpty ? "checkmark.circle.fill" : trimmedSymbolName
         ))
         saveAndReload()
     }

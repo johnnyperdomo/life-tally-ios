@@ -581,7 +581,7 @@ struct CustomHabitsCard: View {
                             } label: {
                                 CustomHabitHomeTile(
                                     name: habit.name,
-                                    symbolName: habit.symbolName,
+                                    symbolName: habit.displaySymbolName,
                                     streak: store.habitStreak(habit),
                                     isCompleted: store.isHabitCompleted(habit)
                                 )

@@ -96,6 +96,11 @@ final class TrackedHabit {
         self.details = details
         self.symbolName = symbolName
     }
+
+    var displaySymbolName: String {
+        let trimmedSymbolName = symbolName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedSymbolName.isEmpty ? "checkmark.circle.fill" : trimmedSymbolName
+    }
 }
 
 @Model

@@ -21,7 +21,7 @@ struct HabitsView: View {
                             store: store,
                             name: habit.name,
                             details: habit.details,
-                            symbolName: habit.symbolName,
+                            symbolName: habit.displaySymbolName,
                             isCompleted: store.isHabitCompleted(habit),
                             streak: store.habitStreak(habit),
                             history: store.habitHistory(habit),
@@ -216,7 +216,7 @@ struct HabitDetailView: View {
                 HabitDetailHero(
                     name: habit.name,
                     details: habit.details,
-                    symbolName: habit.symbolName,
+                    symbolName: habit.displaySymbolName,
                     isCompletedToday: store.isHabitCompleted(habit),
                     toggle: { store.toggleHabit(habit) }
                 )
