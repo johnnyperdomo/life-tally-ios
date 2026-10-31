@@ -19,6 +19,11 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>Life Tally WidgetExtension.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>4</integer>
+		</dict>
 		<key>Life-Tally.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
@@ -38,6 +43,21 @@
 			<true/>
 		</dict>
 		<key>FE0BE2B1309673DA00534422</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>FE0BE2F6309686E800534422</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>FE0BE2FB309686E800534422</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>FE0BE3143096873B00534422</key>
 		<dict>
 			<key>primary</key>
 			<true/>

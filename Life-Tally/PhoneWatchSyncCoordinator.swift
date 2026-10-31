@@ -3,6 +3,9 @@ import Foundation
 
 @MainActor
 final class PhoneWatchSyncCoordinator: NSObject, WCSessionDelegate {
+    private static let processedCommandIDsKey = "LifeTally.watch.processedCommandIDs"
+    private static let processedCommandIDLimit = 200
+
     private let store: LifeTallyStore
     private let session: WCSession?
 
@@ -75,8 +78,14 @@ final class PhoneWatchSyncCoordinator: NSObject, WCSessionDelegate {
 
     private func handle(_ message: [String: Any], replyHandler: (([String: Any]) -> Void)? = nil) {
         Task { @MainActor in
-            if let amount = message["addTasks"] as? Int, amount == 1 || amount == 5 {
-                _ = store.addTasks(amount)
+            if let amount = Self.int(message["addTasks"]), amount == 1 || amount == 5 {
+                if let commandID = message["commandID"] as? String {
+                    if markCommandAsProcessed(commandID) {
+                        _ = store.addTasks(amount)
+                    }
+                } else {
+                    _ = store.addTasks(amount)
+                }
             } else {
                 store.reload()
             }
@@ -86,6 +95,23 @@ final class PhoneWatchSyncCoordinator: NSObject, WCSessionDelegate {
             try? session?.updateApplicationContext(currentPayload)
             session?.transferUserInfo(currentPayload)
         }
+    }
+
+    private func markCommandAsProcessed(_ commandID: String) -> Bool {
+        let defaults = UserDefaults.standard
+        var commandIDs = defaults.stringArray(forKey: Self.processedCommandIDsKey) ?? []
+        guard !commandIDs.contains(commandID) else { return false }
+
+        commandIDs.append(commandID)
+        if commandIDs.count > Self.processedCommandIDLimit {
+            commandIDs.removeFirst(commandIDs.count - Self.processedCommandIDLimit)
+        }
+        defaults.set(commandIDs, forKey: Self.processedCommandIDsKey)
+        return true
+    }
+
+    private static func int(_ value: Any?) -> Int? {
+        (value as? NSNumber)?.intValue
     }
 
     nonisolated func session(

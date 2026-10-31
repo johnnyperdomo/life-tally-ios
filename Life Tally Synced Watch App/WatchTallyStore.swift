@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import WidgetKit
 @preconcurrency import WatchConnectivity
 
 @MainActor
@@ -21,6 +22,9 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
     }
 
     private static let storageKey = "LifeTally.watch.syncedSnapshot"
+    private static let widgetKind = "Life_Tally_Widget"
+    private static let timerWidgetKind = "Life_Tally_Timer_Widget"
+    private static let widgetSuiteName = "group.devplaceholder.I1AQHERN.Life-Tally"
 
     private let session: WCSession?
     private(set) var lifetimePointsHundredths: Int64 = 0
@@ -118,7 +122,10 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
 
     func addTasks(_ amount: Int) {
         guard amount == 1 || amount == 5 else { return }
-        let message: [String: Any] = ["addTasks": amount]
+        let message: [String: Any] = [
+            "addTasks": amount,
+            "commandID": UUID().uuidString
+        ]
 
         if let session, session.activationState == .activated, session.isReachable {
             isUpdating = true
@@ -224,6 +231,10 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
     }
 
     private func save() {
+        let remainingPoints = max(0, levelCost - pointsWithinLevel)
+        let tasksToNextLevel = oneTaskRewardHundredths > 0
+            ? Int((remainingPoints + oneTaskRewardHundredths - 1) / oneTaskRewardHundredths)
+            : 0
         let snapshot = Snapshot(
             lifetimePointsHundredths: lifetimePointsHundredths,
             todayPointsHundredths: todayPointsHundredths,
@@ -241,6 +252,21 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
 
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         UserDefaults.standard.set(data, forKey: Self.storageKey)
+
+        UserDefaults(suiteName: Self.widgetSuiteName)?.set([
+            "lifetimePointsHundredths": lifetimePointsHundredths,
+            "todayPointsHundredths": todayPointsHundredths,
+            "todayTasks": todayTasks,
+            "level": level,
+            "pointsWithinLevel": pointsWithinLevel,
+            "levelCost": levelCost,
+            "tasksToNextLevel": tasksToNextLevel,
+            "combinedMultiplierHundredths": combinedMultiplierHundredths,
+            "latestEntryTimestamp": latestEntryTimestamp?.timeIntervalSince1970 ?? 0,
+            "updatedAt": (lastUpdated ?? .now).timeIntervalSince1970
+        ], forKey: Self.storageKey)
+        WidgetCenter.shared.reloadTimelines(ofKind: Self.widgetKind)
+        WidgetCenter.shared.reloadTimelines(ofKind: Self.timerWidgetKind)
     }
 
     private static func dollarText(_ hundredths: Int64) -> String {

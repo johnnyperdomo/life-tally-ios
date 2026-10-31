@@ -191,7 +191,7 @@ struct TodayCounterCard: View {
             levelMultiplierTenThousandths: levelMultiplier
         )
 
-        VStack(spacing: 18) {
+        VStack(spacing: 22) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Made today")
@@ -622,19 +622,20 @@ struct CustomHabitHomeTile: View {
 
     var body: some View {
         VStack(spacing: 7) {
-            ZStack(alignment: .bottomTrailing) {
+            ZStack {
                 Circle()
                     .fill(
                         isCompleted
                             ? LifeTallyTheme.accent
                             : LifeTallyTheme.accent.opacity(0.1)
                     )
-                    .frame(width: 68, height: 68)
 
                 Image(systemName: symbolName)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(isCompleted ? .white : LifeTallyTheme.accent)
-
+            }
+            .frame(width: 68, height: 68)
+            .overlay(alignment: .bottomTrailing) {
                 if isCompleted {
                     Image(systemName: "checkmark")
                         .font(.caption2.weight(.bold))
