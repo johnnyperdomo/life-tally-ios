@@ -1,17 +1,9 @@
 import SwiftUI
-import Playgrounds
 
 struct ContentView: View {
+    let store: LifeTallyStore
+
     var body: some View {
-        Text("hi johnny")
-            .padding()
+        RootView(store: store)
     }
-}
-
-#Preview {
-    ContentView()
-}
-
-#Playground {
-    _ = 1 + 2
 }

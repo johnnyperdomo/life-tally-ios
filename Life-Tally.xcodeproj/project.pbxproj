@@ -6,20 +6,144 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FE0BE2B3309673DA00534422 /* Life Tally Watch App Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = FE0BE2B2309673DA00534422 /* Life Tally Watch App Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		FE0BE2BF309673DB00534422 /* Life Tally Watch App.app in Resources */ = {isa = PBXBuildFile; fileRef = FE0BE2AD309673DA00534422 /* Life Tally Watch App.app */; };
+		FE0BE2FD309686E800534422 /* Life Tally Companion Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = FE0BE2FC309686E800534422 /* Life Tally Companion Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		FE0BE309309686E900534422 /* Life Tally Companion.app in Resources */ = {isa = PBXBuildFile; fileRef = FE0BE2F7309686E800534422 /* Life Tally Companion.app */; };
+		FE0BE31F3096873C00534422 /* Life Tally Synced Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = FE0BE3153096873B00534422 /* Life Tally Synced Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FE0BE2B4309673DA00534422 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FE0BE2B1309673DA00534422;
+			remoteInfo = "Life Tally Watch App Watch App";
+		};
+		FE0BE2BD309673DB00534422 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FE0BE2AC309673DA00534422;
+			remoteInfo = "Life Tally Watch App";
+		};
+		FE0BE2FE309686E800534422 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FE0BE2FB309686E800534422;
+			remoteInfo = "Life Tally Companion Watch App";
+		};
+		FE0BE307309686E900534422 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FE0BE2F6309686E800534422;
+			remoteInfo = "Life Tally Companion";
+		};
+		FE0BE31D3096873C00534422 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FE0BE3143096873B00534422;
+			remoteInfo = "Life Tally Synced Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FE0BE2C3309673DB00534422 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolder = Product;
+			files = (
+				FE0BE2B3309673DA00534422 /* Life Tally Watch App Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+		};
+		FE0BE30D309686E900534422 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolder = Product;
+			files = (
+				FE0BE2FD309686E800534422 /* Life Tally Companion Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+		};
+		FE0BE3233096873C00534422 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolder = Product;
+			files = (
+				FE0BE31F3096873C00534422 /* Life Tally Synced Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* Life-Tally.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Life-Tally.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE0BE2AD309673DA00534422 /* Life Tally Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Life Tally Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE0BE2B2309673DA00534422 /* Life Tally Watch App Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Life Tally Watch App Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE0BE2F7309686E800534422 /* Life Tally Companion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Life Tally Companion.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE0BE2FC309686E800534422 /* Life Tally Companion Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Life Tally Companion Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE0BE3153096873B00534422 /* Life Tally Synced Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Life Tally Synced Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		FE1D11C93093CD2F004BFB0C /* Exceptions for "Life-Tally" folder in "Life-Tally" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 000000000000000100000000 /* Life-Tally */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		000000000000000000000010 /* Life-Tally */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				FE1D11C93093CD2F004BFB0C /* Exceptions for "Life-Tally" folder in "Life-Tally" target */,
+			);
 			path = "Life-Tally";
+			sourceTree = "<group>";
+		};
+		FE0BE2B6309673DA00534422 /* Life Tally Watch App Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Life Tally Watch App Watch App";
+			sourceTree = "<group>";
+		};
+		FE0BE300309686E800534422 /* Life Tally Companion Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Life Tally Companion Watch App";
+			sourceTree = "<group>";
+		};
+		FE0BE3163096873B00534422 /* Life Tally Synced Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Life Tally Synced Watch App";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		000000000000000130000000 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		FE0BE2AF309673DA00534422 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		FE0BE2F9309686E800534422 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		FE0BE3123096873B00534422 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -31,6 +155,9 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000010 /* Life-Tally */,
+				FE0BE2B6309673DA00534422 /* Life Tally Watch App Watch App */,
+				FE0BE300309686E800534422 /* Life Tally Companion Watch App */,
+				FE0BE3163096873B00534422 /* Life Tally Synced Watch App */,
 				000000000000000000000020 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -39,6 +166,11 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000120 /* Life-Tally.app */,
+				FE0BE2AD309673DA00534422 /* Life Tally Watch App.app */,
+				FE0BE2B2309673DA00534422 /* Life Tally Watch App Watch App.app */,
+				FE0BE2F7309686E800534422 /* Life Tally Companion.app */,
+				FE0BE2FC309686E800534422 /* Life Tally Companion Watch App.app */,
+				FE0BE3153096873B00534422 /* Life Tally Synced Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -53,8 +185,14 @@
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
+				FE0BE3233096873C00534422 /* Embed Watch Content */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				FE0BE2BE309673DB00534422 /* PBXTargetDependency */,
+				FE0BE308309686E900534422 /* PBXTargetDependency */,
+				FE0BE31E3096873C00534422 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				000000000000000000000010 /* Life-Tally */,
@@ -64,6 +202,94 @@
 			productReference = 000000000000000000000120 /* Life-Tally.app */;
 			productType = "com.apple.product-type.application";
 		};
+		FE0BE2AC309673DA00534422 /* Life Tally Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FE0BE2C4309673DB00534422 /* Build configuration list for PBXNativeTarget "Life Tally Watch App" */;
+			buildPhases = (
+				FE0BE2AB309673DA00534422 /* Resources */,
+				FE0BE2C3309673DB00534422 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FE0BE2B5309673DA00534422 /* PBXTargetDependency */,
+			);
+			name = "Life Tally Watch App";
+			productName = "Life Tally Watch App";
+			productReference = FE0BE2AD309673DA00534422 /* Life Tally Watch App.app */;
+			productType = "com.apple.product-type.application.watchapp2-container";
+		};
+		FE0BE2B1309673DA00534422 /* Life Tally Watch App Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FE0BE2C0309673DB00534422 /* Build configuration list for PBXNativeTarget "Life Tally Watch App Watch App" */;
+			buildPhases = (
+				FE0BE2AE309673DA00534422 /* Sources */,
+				FE0BE2AF309673DA00534422 /* Frameworks */,
+				FE0BE2B0309673DA00534422 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				FE0BE2B6309673DA00534422 /* Life Tally Watch App Watch App */,
+			);
+			name = "Life Tally Watch App Watch App";
+			productName = "Life Tally Watch App Watch App";
+			productReference = FE0BE2B2309673DA00534422 /* Life Tally Watch App Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		FE0BE2F6309686E800534422 /* Life Tally Companion */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FE0BE30E309686E900534422 /* Build configuration list for PBXNativeTarget "Life Tally Companion" */;
+			buildPhases = (
+				FE0BE2F5309686E800534422 /* Resources */,
+				FE0BE30D309686E900534422 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FE0BE2FF309686E800534422 /* PBXTargetDependency */,
+			);
+			name = "Life Tally Companion";
+			productName = "Life Tally Companion";
+			productReference = FE0BE2F7309686E800534422 /* Life Tally Companion.app */;
+			productType = "com.apple.product-type.application.watchapp2-container";
+		};
+		FE0BE2FB309686E800534422 /* Life Tally Companion Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FE0BE30A309686E900534422 /* Build configuration list for PBXNativeTarget "Life Tally Companion Watch App" */;
+			buildPhases = (
+				FE0BE2F8309686E800534422 /* Sources */,
+				FE0BE2F9309686E800534422 /* Frameworks */,
+				FE0BE2FA309686E800534422 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				FE0BE300309686E800534422 /* Life Tally Companion Watch App */,
+			);
+			name = "Life Tally Companion Watch App";
+			productName = "Life Tally Companion Watch App";
+			productReference = FE0BE2FC309686E800534422 /* Life Tally Companion Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		FE0BE3143096873B00534422 /* Life Tally Synced Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FE0BE3203096873C00534422 /* Build configuration list for PBXNativeTarget "Life Tally Synced Watch App" */;
+			buildPhases = (
+				FE0BE3113096873B00534422 /* Sources */,
+				FE0BE3123096873B00534422 /* Frameworks */,
+				FE0BE3133096873B00534422 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				FE0BE3163096873B00534422 /* Life Tally Synced Watch App */,
+			);
+			name = "Life Tally Synced Watch App";
+			productName = "Life Tally Synced Watch App";
+			productReference = FE0BE3153096873B00534422 /* Life Tally Synced Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -71,11 +297,26 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2630;
+				LastSwiftUpdateCheck = 2710;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					000000000000000100000000 = {
 						CreatedOnToolsVersion = 26.3;
+					};
+					FE0BE2AC309673DA00534422 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+					FE0BE2B1309673DA00534422 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+					FE0BE2F6309686E800534422 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+					FE0BE2FB309686E800534422 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+					FE0BE3143096873B00534422 = {
+						CreatedOnToolsVersion = 27.1;
 					};
 				};
 			};
@@ -94,12 +335,44 @@
 			projectRoot = "";
 			targets = (
 				000000000000000100000000 /* Life-Tally */,
+				FE0BE2AC309673DA00534422 /* Life Tally Watch App */,
+				FE0BE2B1309673DA00534422 /* Life Tally Watch App Watch App */,
+				FE0BE2F6309686E800534422 /* Life Tally Companion */,
+				FE0BE2FB309686E800534422 /* Life Tally Companion Watch App */,
+				FE0BE3143096873B00534422 /* Life Tally Synced Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		000000000000000140000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+				FE0BE2BF309673DB00534422 /* Life Tally Watch App.app in Resources */,
+				FE0BE309309686E900534422 /* Life Tally Companion.app in Resources */,
+			);
+		};
+		FE0BE2AB309673DA00534422 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		FE0BE2B0309673DA00534422 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		FE0BE2F5309686E800534422 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		FE0BE2FA309686E800534422 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		FE0BE3133096873B00534422 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -112,7 +385,50 @@
 			files = (
 			);
 		};
+		FE0BE2AE309673DA00534422 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		FE0BE2F8309686E800534422 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		FE0BE3113096873B00534422 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		FE0BE2B5309673DA00534422 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FE0BE2B1309673DA00534422 /* Life Tally Watch App Watch App */;
+			targetProxy = FE0BE2B4309673DA00534422 /* PBXContainerItemProxy */;
+		};
+		FE0BE2BE309673DB00534422 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FE0BE2AC309673DA00534422 /* Life Tally Watch App */;
+			targetProxy = FE0BE2BD309673DB00534422 /* PBXContainerItemProxy */;
+		};
+		FE0BE2FF309686E800534422 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FE0BE2FB309686E800534422 /* Life Tally Companion Watch App */;
+			targetProxy = FE0BE2FE309686E800534422 /* PBXContainerItemProxy */;
+		};
+		FE0BE308309686E900534422 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FE0BE2F6309686E800534422 /* Life Tally Companion */;
+			targetProxy = FE0BE307309686E900534422 /* PBXContainerItemProxy */;
+		};
+		FE0BE31E3096873C00534422 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FE0BE3143096873B00534422 /* Life Tally Synced Watch App */;
+			targetProxy = FE0BE31D3096873C00534422 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		000000000000000011000000 /* Debug configuration for PBXProject "Life-Tally" */ = {
@@ -256,6 +572,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Life-Tally/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -265,8 +582,7 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0;
@@ -275,13 +591,13 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -294,6 +610,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Life-Tally/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -303,8 +620,7 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0;
@@ -313,13 +629,272 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		FE0BE2C1309673DB00534422 /* Debug configuration for PBXNativeTarget "Life Tally Watch App Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally Watch App";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "devplaceholder.I1AQHERN.Life-Tally";
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				INFOPLIST_KEY_WKWatchOnly = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.I1AQHERN.Life-Tally.Life-Tally-Watch-App.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		FE0BE2C2309673DB00534422 /* Release configuration for PBXNativeTarget "Life Tally Watch App Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally Watch App";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "devplaceholder.I1AQHERN.Life-Tally";
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				INFOPLIST_KEY_WKWatchOnly = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.I1AQHERN.Life-Tally.Life-Tally-Watch-App.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FE0BE2C5309673DB00534422 /* Debug configuration for PBXNativeTarget "Life Tally Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally Watch App";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.I1AQHERN.Life-Tally.Life-Tally-Watch-App";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		FE0BE2C6309673DB00534422 /* Release configuration for PBXNativeTarget "Life Tally Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally Watch App";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.I1AQHERN.Life-Tally.Life-Tally-Watch-App";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FE0BE30B309686E900534422 /* Debug configuration for PBXNativeTarget "Life Tally Companion Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally Companion";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKWatchOnly = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.I1AQHERN.Life-Tally.Life-Tally-Companion.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		FE0BE30C309686E900534422 /* Release configuration for PBXNativeTarget "Life Tally Companion Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally Companion";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKWatchOnly = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.I1AQHERN.Life-Tally.Life-Tally-Companion.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FE0BE30F309686E900534422 /* Debug configuration for PBXNativeTarget "Life Tally Companion" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally Companion";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.I1AQHERN.Life-Tally.Life-Tally-Companion";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		FE0BE310309686E900534422 /* Release configuration for PBXNativeTarget "Life Tally Companion" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally Companion";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.I1AQHERN.Life-Tally.Life-Tally-Companion";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FE0BE3213096873C00534422 /* Debug configuration for PBXNativeTarget "Life Tally Synced Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally Synced";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "devplaceholder.I1AQHERN.Life-Tally";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.I1AQHERN.Life-Tally.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		FE0BE3223096873C00534422 /* Release configuration for PBXNativeTarget "Life Tally Synced Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Life Tally Synced";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "devplaceholder.I1AQHERN.Life-Tally";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.I1AQHERN.Life-Tally.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -339,6 +914,46 @@
 			buildConfigurations = (
 				000000000000000111000000 /* Debug configuration for PBXNativeTarget "Life-Tally" */,
 				000000000000000112000000 /* Release configuration for PBXNativeTarget "Life-Tally" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		FE0BE2C0309673DB00534422 /* Build configuration list for PBXNativeTarget "Life Tally Watch App Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FE0BE2C1309673DB00534422 /* Debug configuration for PBXNativeTarget "Life Tally Watch App Watch App" */,
+				FE0BE2C2309673DB00534422 /* Release configuration for PBXNativeTarget "Life Tally Watch App Watch App" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		FE0BE2C4309673DB00534422 /* Build configuration list for PBXNativeTarget "Life Tally Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FE0BE2C5309673DB00534422 /* Debug configuration for PBXNativeTarget "Life Tally Watch App" */,
+				FE0BE2C6309673DB00534422 /* Release configuration for PBXNativeTarget "Life Tally Watch App" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		FE0BE30A309686E900534422 /* Build configuration list for PBXNativeTarget "Life Tally Companion Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FE0BE30B309686E900534422 /* Debug configuration for PBXNativeTarget "Life Tally Companion Watch App" */,
+				FE0BE30C309686E900534422 /* Release configuration for PBXNativeTarget "Life Tally Companion Watch App" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		FE0BE30E309686E900534422 /* Build configuration list for PBXNativeTarget "Life Tally Companion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FE0BE30F309686E900534422 /* Debug configuration for PBXNativeTarget "Life Tally Companion" */,
+				FE0BE310309686E900534422 /* Release configuration for PBXNativeTarget "Life Tally Companion" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		FE0BE3203096873C00534422 /* Build configuration list for PBXNativeTarget "Life Tally Synced Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FE0BE3213096873C00534422 /* Debug configuration for PBXNativeTarget "Life Tally Synced Watch App" */,
+				FE0BE3223096873C00534422 /* Release configuration for PBXNativeTarget "Life Tally Synced Watch App" */,
 			);
 			defaultConfigurationName = Release;
 		};
