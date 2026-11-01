@@ -592,10 +592,19 @@ struct CustomHabitsCard: View {
                                     name: habit.name,
                                     symbolName: habit.displaySymbolName,
                                     streak: store.habitStreak(habit),
-                                    isCompleted: store.isHabitCompleted(habit)
+                                    isCompleted: store.isHabitCompleted(habit),
+                                    isSkipped: store.isHabitSkipped(habit)
                                 )
                             }
                             .buttonStyle(.plain)
+                            .contextMenu {
+                                Button(
+                                    store.isHabitSkipped(habit) ? "Undo skip" : "Skip today",
+                                    systemImage: "forward.fill"
+                                ) {
+                                    store.toggleHabitSkipped(habit)
+                                }
+                            }
                             .accessibilityHint(
                                 store.isHabitCompleted(habit)
                                     ? "Marks this habit incomplete for today"
@@ -628,6 +637,7 @@ struct CustomHabitHomeTile: View {
     let symbolName: String
     let streak: Int
     let isCompleted: Bool
+    let isSkipped: Bool
 
     var body: some View {
         VStack(spacing: 7) {
@@ -645,8 +655,8 @@ struct CustomHabitHomeTile: View {
             }
             .frame(width: 68, height: 68)
             .overlay(alignment: .bottomTrailing) {
-                if isCompleted {
-                    Image(systemName: "checkmark")
+                if isCompleted || isSkipped {
+                    Image(systemName: isCompleted ? "checkmark" : "forward.fill")
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(LifeTallyTheme.accent)
                         .frame(width: 22, height: 22)
@@ -676,7 +686,7 @@ struct CustomHabitHomeTile: View {
         .frame(width: 92)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "\(name), \(streak) day streak, \(isCompleted ? "completed today" : "not completed today")"
+            "\(name), \(streak) day streak, \(isCompleted ? "completed today" : isSkipped ? "skipped today" : "not completed today")"
         )
     }
 }

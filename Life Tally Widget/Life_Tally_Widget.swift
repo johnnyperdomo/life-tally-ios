@@ -57,14 +57,13 @@ private enum LifeTallyWidgetStorage {
         values["latestEntryTimestamp"] = date.timeIntervalSince1970
         values["updatedAt"] = date.timeIntervalSince1970
 
-        pointsWithinLevel += reward
-        while pointsWithinLevel >= levelCost {
+        let nextReward = Int64((Double(reward) * 1.005).rounded())
+        pointsWithinLevel += boundedLevelProgress(reward: reward, levelCost: levelCost)
+        if pointsWithinLevel >= levelCost {
             pointsWithinLevel -= levelCost
             level += 1
-            levelCost = Self.levelCost(for: level)
+            levelCost = lockedLevelCost(nextReward: nextReward)
         }
-
-        let nextReward = Int64((Double(reward) * 1.005).rounded())
         let currentMultiplier = int64(values["combinedMultiplierHundredths"], fallback: 100)
         let remainingPoints = max(0, levelCost - pointsWithinLevel)
         values["oneTaskRewardHundredths"] = nextReward
@@ -72,8 +71,9 @@ private enum LifeTallyWidgetStorage {
         values["level"] = level
         values["pointsWithinLevel"] = pointsWithinLevel
         values["levelCost"] = levelCost
-        values["tasksToNextLevel"] = nextReward > 0
-            ? Int((remainingPoints + nextReward - 1) / nextReward)
+        let nextProgress = boundedLevelProgress(reward: nextReward, levelCost: levelCost)
+        values["tasksToNextLevel"] = nextProgress > 0
+            ? Int((remainingPoints + nextProgress - 1) / nextProgress)
             : 0
 
         defaults.set(values, forKey: snapshotKey)
@@ -90,11 +90,22 @@ private enum LifeTallyWidgetStorage {
         return int64(values["combinedMultiplierHundredths"], fallback: 100) * 100
     }
 
+    private static func lockedLevelCost(nextReward: Int64) -> Int64 {
+        max(1, nextReward) * 12
+    }
+
+    private static func boundedLevelProgress(reward: Int64, levelCost: Int64) -> Int64 {
+        let cost = max(1, levelCost)
+        let minimumProgress = (cost + 14) / 15
+        let maximumProgress = max(1, cost / 10)
+        return min(max(reward, minimumProgress), maximumProgress)
+    }
+
     private static func levelCost(for level: Int) -> Int64 {
-        var cost: Int64 = 120_000
+        var cost: Int64 = 150_000
         if level > 1 {
             for _ in 1..<level {
-                cost = cost * 118 / 100
+                cost = cost * 106 / 100
             }
         }
         return cost * (10_000 + Int64(max(0, level - 1)) * 960) / 10_000
@@ -128,7 +139,7 @@ struct LifeTallyWidgetEntry: TimelineEntry {
         todayTasks: 0,
         level: 1,
         pointsWithinLevel: 0,
-        levelCost: 120_000,
+        levelCost: 150_000,
         tasksToNextLevel: 0,
         combinedMultiplierHundredths: 100,
         oneTaskRewardHundredths: 10_000,
@@ -169,6 +180,10 @@ struct LifeTallyWidgetEntry: TimelineEntry {
 
     var nextLevelAmount: String {
         currency(max(0, levelCost - pointsWithinLevel))
+    }
+
+    var levelGoalAmount: String {
+        currency(todayPointsHundredths + max(0, levelCost - pointsWithinLevel))
     }
 
     var levelProgress: Double {
@@ -283,23 +298,26 @@ private struct LifeTallyRectangularWidget: View {
             }
             .frame(maxWidth: .infinity)
 
-            ZStack {
+            ZStack(alignment: .leading) {
                 Capsule()
                     .fill(.secondary.opacity(0.18))
 
                 GeometryReader { geometry in
-                    Capsule()
-                        .fill(.blue)
-                        .frame(width: geometry.size.width * entry.levelProgress)
-                }
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .fill(.blue)
+                            .frame(width: geometry.size.width * entry.levelProgress)
 
-                Text(entry.nextLevelAmount)
-                    .font(.system(size: 7, weight: .semibold))
-                    .foregroundStyle(.primary.opacity(0.7))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .padding(.horizontal, 4)
+                        ForEach(1..<12) { step in
+                            Rectangle()
+                                .fill(.primary.opacity(0.28))
+                                .frame(width: 0.75)
+                                .offset(
+                                    x: geometry.size.width * Double(step) / 12
+                                )
+                        }
+                    }
+                }
             }
             .frame(height: 11)
             .clipShape(Capsule())
@@ -310,24 +328,19 @@ private struct LifeTallyRectangularWidget: View {
             Spacer(minLength: 0)
 
             HStack {
-                HStack(spacing: 2) {
-                    Image(systemName: "checkmark.circle.fill")
-                    Text(entry.todayTasks.formatted())
-                }
-                .widgetAccentable()
-                .accessibilityElement(children: .combine)
+                Text("+\(entry.oneTaskAmount)")
+                    .foregroundStyle(.green)
 
                 Spacer(minLength: 4)
 
-                Text("+\(entry.oneTaskAmount)")
-                    .font(.system(size: 8, weight: .semibold))
-                    .foregroundStyle(.green)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.65)
+                Text(entry.levelGoalAmount)
+                    .foregroundStyle(.orange)
+                    .accessibilityLabel("\(entry.levelGoalAmount) level goal")
             }
-            .font(.system(size: 8))
-            .foregroundStyle(.secondary)
+            .font(.system(size: 8, weight: .semibold))
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.65)
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

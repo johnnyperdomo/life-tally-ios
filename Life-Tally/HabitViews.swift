@@ -9,7 +9,7 @@ struct HabitsView: View {
             LazyVStack(spacing: 14) {
                 HabitDaySummary(
                     completed: store.completedHabitCount(),
-                    total: store.activeHabits.count
+                    total: store.activeHabits.filter { !store.isHabitSkipped($0) }.count
                 )
 
                 if store.activeHabits.isEmpty {
@@ -23,9 +23,11 @@ struct HabitsView: View {
                             details: habit.details,
                             symbolName: habit.displaySymbolName,
                             isCompleted: store.isHabitCompleted(habit),
+                            isSkipped: store.isHabitSkipped(habit),
                             streak: store.habitStreak(habit),
                             history: store.habitHistory(habit),
                             toggle: { toggle(habit) },
+                            toggleSkipped: { toggleSkipped(habit) },
                             archive: { store.archiveHabit(habit) }
                         )
                     }
@@ -56,6 +58,11 @@ struct HabitsView: View {
         } else {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         }
+    }
+
+    private func toggleSkipped(_ habit: TrackedHabit) {
+        store.toggleHabitSkipped(habit)
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
     }
 }
 
@@ -115,9 +122,11 @@ struct DailyHabitTile: View {
     let details: String
     let symbolName: String
     let isCompleted: Bool
+    let isSkipped: Bool
     let streak: Int
     let history: [HabitDayMark]
     let toggle: () -> Void
+    let toggleSkipped: () -> Void
     let archive: () -> Void
 
     var body: some View {
@@ -183,15 +192,18 @@ struct DailyHabitTile: View {
             HStack {
                 Label(streak == 1 ? "1 day streak" : "\(streak) day streak", systemImage: "flame.fill")
                 Spacer()
-                Label(
-                    isCompleted
-                        ? "\(LifeTallyFormat.points(ScoringRules.habitCompletionHundredths)) earned"
-                        : "Worth \(LifeTallyFormat.points(ScoringRules.habitCompletionHundredths))",
-                    systemImage: "sparkles"
+                Button(action: toggleSkipped) {
+                    Label(isSkipped ? "Skipped" : "Skip today", systemImage: "forward.fill")
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(isSkipped ? .secondary : LifeTallyTheme.accent)
+                .accessibilityHint(
+                    isSkipped
+                        ? "Marks this habit as applicable again today"
+                        : "Excludes today without breaking the streak"
                 )
             }
             .font(.caption.weight(.semibold))
-            .foregroundStyle(LifeTallyTheme.accent)
         }
         .padding(17)
         .background(LifeTallyTheme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -218,7 +230,9 @@ struct HabitDetailView: View {
                     details: habit.details,
                     symbolName: habit.displaySymbolName,
                     isCompletedToday: store.isHabitCompleted(habit),
-                    toggle: { store.toggleHabit(habit) }
+                    isSkippedToday: store.isHabitSkipped(habit),
+                    toggle: { store.toggleHabit(habit) },
+                    toggleSkipped: { store.toggleHabitSkipped(habit) }
                 )
 
                 HabitMetricsGrid(
@@ -246,7 +260,9 @@ struct HabitDetailHero: View {
     let details: String
     let symbolName: String
     let isCompletedToday: Bool
+    let isSkippedToday: Bool
     let toggle: () -> Void
+    let toggleSkipped: () -> Void
 
     var body: some View {
         HStack(spacing: 16) {
@@ -266,18 +282,30 @@ struct HabitDetailHero: View {
                 }
             }
             Spacer()
-            Button(action: toggle) {
-                Image(systemName: isCompletedToday ? "checkmark" : "plus")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 46, height: 46)
-                    .background(LifeTallyTheme.accent, in: Circle())
+            HStack(spacing: 8) {
+                Button(action: toggleSkipped) {
+                    Image(systemName: "forward.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(isSkippedToday ? .white : .secondary)
+                        .frame(width: 42, height: 42)
+                        .background(isSkippedToday ? Color.secondary : Color.secondary.opacity(0.12), in: Circle())
+                }
+                .accessibilityLabel(isSkippedToday ? "Undo skip for today" : "Skip for today")
+                .accessibilityHint("A skipped day does not break the streak")
+
+                Button(action: toggle) {
+                    Image(systemName: isCompletedToday ? "checkmark" : "plus")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 46, height: 46)
+                        .background(LifeTallyTheme.accent, in: Circle())
+                }
+                .accessibilityLabel(
+                    isCompletedToday
+                        ? "Mark incomplete today"
+                        : "Complete for \(LifeTallyFormat.points(ScoringRules.habitCompletionHundredths))"
+                )
             }
-            .accessibilityLabel(
-                isCompletedToday
-                    ? "Mark incomplete today"
-                    : "Complete for \(LifeTallyFormat.points(ScoringRules.habitCompletionHundredths))"
-            )
         }
         .padding(18)
         .background(LifeTallyTheme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -350,6 +378,8 @@ struct HabitHistoryCard: View {
             HStack(spacing: 14) {
                 Label("Completed", systemImage: "square.fill")
                     .foregroundStyle(LifeTallyTheme.accent)
+                Label("Skipped", systemImage: "square.fill")
+                    .foregroundStyle(.secondary)
                 Label("Missed", systemImage: "square.fill")
                     .foregroundStyle(LifeTallyTheme.accent.opacity(0.15))
             }
@@ -369,7 +399,11 @@ struct HabitHeatmap: View {
             LazyHGrid(rows: rows, spacing: 3) {
                 ForEach(history) { day in
                     RoundedRectangle(cornerRadius: 3.5, style: .continuous)
-                        .fill(day.isCompleted ? LifeTallyTheme.accent : LifeTallyTheme.accent.opacity(0.08))
+                        .fill(
+                            day.isCompleted
+                                ? LifeTallyTheme.accent
+                                : day.isSkipped ? Color.secondary.opacity(0.45) : LifeTallyTheme.accent.opacity(0.08)
+                        )
                         .frame(width: 13, height: 13)
                         .overlay {
                             if day.isToday {
@@ -378,7 +412,9 @@ struct HabitHeatmap: View {
                             }
                         }
                         .accessibilityLabel(day.date.formatted(date: .abbreviated, time: .omitted))
-                        .accessibilityValue(day.isCompleted ? "Completed" : "Not completed")
+                        .accessibilityValue(
+                            day.isCompleted ? "Completed" : day.isSkipped ? "Skipped" : "Not completed"
+                        )
                 }
             }
             .padding(.vertical, 2)

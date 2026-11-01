@@ -109,6 +109,7 @@ final class LifeTallyStore {
             day.modifiedAt = now
             ensureReward(kind: .habitBonus, day: day)
         }
+        ensureLockedProgression()
         saveAndReload()
     }
 
@@ -133,8 +134,8 @@ final class LifeTallyStore {
             levelMultiplierTenThousandths: rewardMultiplier
         )
         context.insert(entry)
-        saveAndReload()
-        return ScoringRules.taskPointsHundredths(
+
+        let reward = ScoringRules.taskPointsHundredths(
             units: units,
             goodSleep: day.goodSleep,
             failed: day.habitFailed,
@@ -142,6 +143,9 @@ final class LifeTallyStore {
             completedHabits: completedHabitCount(on: day.date),
             levelMultiplierTenThousandths: rewardMultiplier
         )
+        applyLevelProgress(for: units, startingCompletedTasks: lifetimeTasks)
+        saveAndReload()
+        return reward
     }
 
     func correct(_ requestedUnits: Int, now: Date = Date()) {
@@ -233,7 +237,18 @@ final class LifeTallyStore {
     }
 
     var progression: Progression {
-        ScoringRules.progression(for: lifetimePointsHundredths)
+        guard
+            let profile,
+            profile.progressionLevelCostHundredths > 0
+        else {
+            return ScoringRules.progression(for: lifetimePointsHundredths)
+        }
+
+        return Progression(
+            level: profile.progressionLevel,
+            pointsWithinLevel: profile.progressionPointsHundredths,
+            levelCost: profile.progressionLevelCostHundredths
+        )
     }
 
     var activeHabits: [TrackedHabit] {
@@ -257,34 +272,67 @@ final class LifeTallyStore {
         saveAndReload()
     }
 
-    func isHabitCompleted(_ habit: TrackedHabit, on date: Date = Date()) -> Bool {
+    func habitStatus(_ habit: TrackedHabit, on date: Date = Date()) -> HabitDayStatus? {
         let key = dayKey(date)
-        return habitCompletions.contains { $0.habitID == habit.stableID && $0.dayKey == key }
+        return habitCompletions.first {
+            $0.habitID == habit.stableID && $0.dayKey == key
+        }?.status
+    }
+
+    func isHabitCompleted(_ habit: TrackedHabit, on date: Date = Date()) -> Bool {
+        habitStatus(habit, on: date) == .completed
+    }
+
+    func isHabitSkipped(_ habit: TrackedHabit, on date: Date = Date()) -> Bool {
+        habitStatus(habit, on: date) == .skipped
     }
 
     func toggleHabit(_ habit: TrackedHabit, on date: Date = Date()) {
+        setHabitStatus(isHabitCompleted(habit, on: date) ? nil : .completed, for: habit, on: date)
+    }
+
+    func toggleHabitSkipped(_ habit: TrackedHabit, on date: Date = Date()) {
+        setHabitStatus(isHabitSkipped(habit, on: date) ? nil : .skipped, for: habit, on: date)
+    }
+
+    private func setHabitStatus(_ status: HabitDayStatus?, for habit: TrackedHabit, on date: Date) {
         let key = dayKey(date)
-        if let completion = habitCompletions.first(where: {
+        let existing = habitCompletions.first {
             $0.habitID == habit.stableID && $0.dayKey == key
-        }) {
-            context.delete(completion)
-        } else {
-            context.insert(HabitCompletion(habitID: habit.stableID, dayKey: key, completedAt: date))
+        }
+
+        if let status {
+            if let existing {
+                existing.statusRawValue = status.rawValue
+                existing.completedAt = date
+            } else {
+                context.insert(HabitCompletion(
+                    habitID: habit.stableID,
+                    dayKey: key,
+                    completedAt: date,
+                    status: status
+                ))
+            }
+        } else if let existing {
+            context.delete(existing)
         }
         saveAndReload()
     }
 
     func completedHabitCount(on date: Date = Date()) -> Int {
         let key = dayKey(date)
-        return habitCompletions.filter { $0.dayKey == key }.count
+        return habitCompletions.filter { $0.dayKey == key && $0.status == .completed }.count
     }
 
     func habitStreak(_ habit: TrackedHabit, through date: Date = Date()) -> Int {
         let calendar = Calendar.autoupdatingCurrent
         var cursor = calendar.startOfDay(for: date)
         var streak = 0
-        while isHabitCompleted(habit, on: cursor) {
-            streak += 1
+
+        while let status = habitStatus(habit, on: cursor) {
+            if status == .completed {
+                streak += 1
+            }
             guard let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
             cursor = previous
         }
@@ -295,10 +343,10 @@ final class LifeTallyStore {
         let calendar = Calendar.autoupdatingCurrent
         let today = calendar.startOfDay(for: date)
         let count = max(1, dayCount)
-        let completionKeys = Set(
-            habitCompletions
+        let statuses = Dictionary(
+            uniqueKeysWithValues: habitCompletions
                 .filter { $0.habitID == habit.stableID }
-                .map(\.dayKey)
+                .map { ($0.dayKey, $0.status) }
         )
 
         return (0..<count).compactMap { offset in
@@ -309,42 +357,46 @@ final class LifeTallyStore {
             return HabitDayMark(
                 dayKey: key,
                 date: day,
-                isCompleted: completionKeys.contains(key),
+                status: statuses[key],
                 isToday: calendar.isDate(day, inSameDayAs: today)
             )
         }
     }
 
     func habitCompletionCount(_ habit: TrackedHabit) -> Int {
-        habitCompletions.filter { $0.habitID == habit.stableID }.count
+        habitCompletions.filter { $0.habitID == habit.stableID && $0.status == .completed }.count
     }
 
     func habitBestStreak(_ habit: TrackedHabit) -> Int {
         let calendar = Calendar.autoupdatingCurrent
-        let completedDates = habitCompletions
+        let records = habitCompletions
             .filter { $0.habitID == habit.stableID }
-            .map { calendar.startOfDay(for: $0.completedAt) }
-            .sorted()
-        guard !completedDates.isEmpty else { return 0 }
+            .sorted { $0.completedAt < $1.completedAt }
+        guard !records.isEmpty else { return 0 }
 
-        var best = 1
-        var current = 1
-        for pair in zip(completedDates, completedDates.dropFirst()) {
-            let daysApart = calendar.dateComponents([.day], from: pair.0, to: pair.1).day ?? 0
-            if daysApart == 1 {
+        var best = 0
+        var current = 0
+        var previousDate: Date?
+
+        for record in records {
+            let date = calendar.startOfDay(for: record.completedAt)
+            if let previousDate,
+               calendar.dateComponents([.day], from: previousDate, to: date).day ?? 0 > 1 {
+                current = 0
+            }
+            if record.status == .completed {
                 current += 1
                 best = max(best, current)
-            } else if daysApart > 1 {
-                current = 1
             }
+            previousDate = date
         }
         return best
     }
 
     func habitCompletionRate(_ habit: TrackedHabit, dayCount: Int = 30) -> Double {
-        let history = habitHistory(habit, dayCount: dayCount)
-        guard !history.isEmpty else { return 0 }
-        return Double(history.filter(\.isCompleted).count) / Double(history.count)
+        let applicableDays = habitHistory(habit, dayCount: dayCount).filter { !$0.isSkipped }
+        guard !applicableDays.isEmpty else { return 0 }
+        return Double(applicableDays.filter(\.isCompleted).count) / Double(applicableDays.count)
     }
 
     var currentCompletedStreak: Int {
@@ -443,6 +495,78 @@ final class LifeTallyStore {
         let hour = calendar.component(.hour, from: best.value[0].timestamp)
         let label = Date(timeIntervalSince1970: Double(hour * 3600)).formatted(.dateTime.hour())
         return (label, best.value.reduce(0) { $0 + $1.taskUnits })
+    }
+
+    private func ensureLockedProgression() {
+        guard
+            let profile,
+            profile.progressionLevelCostHundredths <= 0
+        else {
+            return
+        }
+
+        let legacyProgression = ScoringRules.progression(for: lifetimePointsHundredths)
+        let nextReward = oneTaskRewardHundredths(
+            level: legacyProgression.level,
+            completedTasks: lifetimeTasks
+        )
+        let lockedCost = ScoringRules.lockedLevelCostHundredths(
+            nextTaskRewardHundredths: nextReward
+        )
+        let progressFraction = Double(legacyProgression.pointsWithinLevel)
+            / Double(max(1, legacyProgression.levelCost))
+
+        profile.progressionLevel = legacyProgression.level
+        profile.progressionLevelCostHundredths = lockedCost
+        profile.progressionPointsHundredths = min(
+            lockedCost - 1,
+            Int64((Double(lockedCost) * progressFraction).rounded())
+        )
+    }
+
+    private func applyLevelProgress(for units: Int, startingCompletedTasks: Int) {
+        ensureLockedProgression()
+        guard let profile else { return }
+
+        for offset in 0..<max(0, units) {
+            let reward = oneTaskRewardHundredths(
+                level: profile.progressionLevel,
+                completedTasks: startingCompletedTasks + offset
+            )
+            profile.progressionPointsHundredths += ScoringRules.boundedLevelProgressHundredths(
+                rewardHundredths: reward,
+                levelCostHundredths: profile.progressionLevelCostHundredths
+            )
+
+            if profile.progressionPointsHundredths >= profile.progressionLevelCostHundredths {
+                profile.progressionPointsHundredths -= profile.progressionLevelCostHundredths
+                profile.progressionLevel += 1
+
+                let nextReward = oneTaskRewardHundredths(
+                    level: profile.progressionLevel,
+                    completedTasks: startingCompletedTasks + offset + 1
+                )
+                profile.progressionLevelCostHundredths = ScoringRules.lockedLevelCostHundredths(
+                    nextTaskRewardHundredths: nextReward
+                )
+            }
+        }
+    }
+
+    private func oneTaskRewardHundredths(level: Int, completedTasks: Int) -> Int64 {
+        let summary = today
+        let levelMultiplier = ScoringRules.levelMultiplierTenThousandths(level: level)
+        let growthMultiplier = ScoringRules.taskGrowthMultiplierTenThousandths(
+            completedTasks: completedTasks
+        )
+        return ScoringRules.taskPointsHundredths(
+            units: 1,
+            goodSleep: summary.sleep,
+            failed: summary.failed,
+            completedDays: summary.completedStreakBeforeDay,
+            completedHabits: completedHabitCount(),
+            levelMultiplierTenThousandths: levelMultiplier * growthMultiplier / 10_000
+        )
     }
 
     private func ensureDay(_ date: Date) -> DailyState {

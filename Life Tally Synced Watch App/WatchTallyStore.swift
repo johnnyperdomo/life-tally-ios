@@ -34,7 +34,7 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
     private(set) var todayTasks = 0
     private(set) var level = 1
     private(set) var pointsWithinLevel: Int64 = 0
-    private(set) var levelCost: Int64 = 120_000
+    private(set) var levelCost: Int64 = 150_000
     private(set) var combinedMultiplierHundredths: Int64 = 100
     private(set) var oneTaskRewardHundredths: Int64 = 10_000
     private(set) var fiveTaskRewardHundredths: Int64 = 50_500
@@ -183,11 +183,19 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         todayTasks += amount
         todayPointsHundredths += reward
         lifetimePointsHundredths += reward
-        pointsWithinLevel += reward
-        while pointsWithinLevel >= levelCost {
-            pointsWithinLevel -= levelCost
-            level += 1
-            levelCost = Self.levelCost(for: level)
+        for offset in 0..<amount {
+            let taskReward = Self.increasedReward(oneTaskRewardHundredths, by: offset)
+            pointsWithinLevel += Self.boundedLevelProgress(
+                reward: taskReward,
+                levelCost: levelCost
+            )
+            if pointsWithinLevel >= levelCost {
+                pointsWithinLevel -= levelCost
+                level += 1
+                levelCost = Self.lockedLevelCost(
+                    nextReward: Self.increasedReward(taskReward, by: 1)
+                )
+            }
         }
         oneTaskRewardHundredths = Self.increasedReward(oneTaskRewardHundredths, by: amount)
         fiveTaskRewardHundredths = Self.fiveTaskReward(startingAt: oneTaskRewardHundredths)
@@ -329,11 +337,22 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         }
     }
 
+    private static func lockedLevelCost(nextReward: Int64) -> Int64 {
+        max(1, nextReward) * 12
+    }
+
+    private static func boundedLevelProgress(reward: Int64, levelCost: Int64) -> Int64 {
+        let cost = max(1, levelCost)
+        let minimumProgress = (cost + 14) / 15
+        let maximumProgress = max(1, cost / 10)
+        return min(max(reward, minimumProgress), maximumProgress)
+    }
+
     private static func levelCost(for level: Int) -> Int64 {
-        var cost: Int64 = 120_000
+        var cost: Int64 = 150_000
         if level > 1 {
             for _ in 1..<level {
-                cost = cost * 118 / 100
+                cost = cost * 106 / 100
             }
         }
         return cost * (10_000 + Int64(max(0, level - 1)) * 960) / 10_000

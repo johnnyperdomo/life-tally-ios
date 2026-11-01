@@ -75,6 +75,9 @@ final class DailyState {
 final class AppProfile {
     var stableID: String = "life-tally-profile"
     var trackingStart: Date = Date()
+    var progressionLevel: Int = 1
+    var progressionPointsHundredths: Int64 = 0
+    var progressionLevelCostHundredths: Int64 = 0
     var createdAt: Date = Date()
 
     init(trackingStart: Date) {
@@ -103,18 +106,34 @@ final class TrackedHabit {
     }
 }
 
+enum HabitDayStatus: String, Codable, Equatable {
+    case completed
+    case skipped
+}
+
 @Model
 final class HabitCompletion {
     var stableID: String = UUID().uuidString
     var habitID: String = ""
     var dayKey: String = ""
     var completedAt: Date = Date()
+    var statusRawValue: String = HabitDayStatus.completed.rawValue
 
-    init(habitID: String, dayKey: String, completedAt: Date) {
+    init(
+        habitID: String,
+        dayKey: String,
+        completedAt: Date,
+        status: HabitDayStatus = .completed
+    ) {
         self.stableID = "habit-\(habitID)-\(dayKey)"
         self.habitID = habitID
         self.dayKey = dayKey
         self.completedAt = completedAt
+        self.statusRawValue = status.rawValue
+    }
+
+    var status: HabitDayStatus {
+        HabitDayStatus(rawValue: statusRawValue) ?? .completed
     }
 }
 
@@ -140,10 +159,12 @@ struct Progression: Equatable {
 struct HabitDayMark: Identifiable, Equatable {
     let dayKey: String
     let date: Date
-    let isCompleted: Bool
+    let status: HabitDayStatus?
     let isToday: Bool
 
     var id: String { dayKey }
+    var isCompleted: Bool { status == .completed }
+    var isSkipped: Bool { status == .skipped }
 }
 
 enum ScoringRules {
@@ -153,9 +174,13 @@ enum ScoringRules {
     static let sleepBonusHundredths: Int64 = 50 * economyScale * 100
     static let successBonusHundredths: Int64 = 100 * economyScale * 100
     static let habitCompletionHundredths: Int64 = 5 * economyScale * 100
-    // Level 3 stays near 20–30 additions from a fresh start; progression remains money-based.
-    static let startingLevelCostHundredths: Int64 = 1_200 * 100
-    static let levelCostGrowthPercent: Int64 = 18
+    // A level starts near 15 base-reward tasks and tracks the roughly 6% reward
+    // growth earned across a typical level, keeping later levels from stretching out.
+    static let startingLevelCostHundredths: Int64 = 1_500 * 100
+    static let levelCostGrowthPercent: Int64 = 6
+    static let targetTasksPerLevel: Int64 = 12
+    static let minimumTasksPerLevel: Int64 = 10
+    static let maximumTasksPerLevel: Int64 = 15
 
     static func streakMultiplierHundredths(completedDays: Int) -> Int64 {
         switch completedDays {
@@ -233,6 +258,23 @@ enum ScoringRules {
             * levelMultiplierTenThousandths(level: normalizedLevel)
             / 10_000
         return min(ultimateGoalHundredths, adjustedForPermanentBonus)
+    }
+
+    static func lockedLevelCostHundredths(nextTaskRewardHundredths: Int64) -> Int64 {
+        min(
+            ultimateGoalHundredths,
+            max(1, nextTaskRewardHundredths) * targetTasksPerLevel
+        )
+    }
+
+    static func boundedLevelProgressHundredths(
+        rewardHundredths: Int64,
+        levelCostHundredths: Int64
+    ) -> Int64 {
+        let cost = max(1, levelCostHundredths)
+        let minimumProgress = (cost + maximumTasksPerLevel - 1) / maximumTasksPerLevel
+        let maximumProgress = max(1, cost / minimumTasksPerLevel)
+        return min(max(rewardHundredths, minimumProgress), maximumProgress)
     }
 
     static func pointsRequiredToReachLevel(_ targetLevel: Int) -> Int64 {
