@@ -354,7 +354,7 @@ private struct LifeTallyRectangularWidget: View {
                 Spacer(minLength: 4)
 
                 Text(entry.levelGoalAmount)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(.green)
                     .accessibilityLabel("\(entry.levelGoalAmount) level goal")
             }
             .font(.system(size: 8, weight: .semibold))
