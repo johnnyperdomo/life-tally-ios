@@ -323,11 +323,11 @@ private struct LifeTallyRectangularWidget: View {
                 }
 
                 HStack(spacing: 4) {
-                    Text(entry.tasksToNextLevel.formatted())
+                    Text("+\(entry.oneTaskAmount)")
 
                     Spacer(minLength: 4)
 
-                    Text("+\(entry.oneTaskAmount)")
+                    Text(entry.tasksToNextLevel.formatted())
                 }
                 .font(.system(size: 7, weight: .bold))
                 .foregroundStyle(.white)
