@@ -269,7 +269,7 @@ private struct LifeTallyRectangularWidget: View {
 
             HStack(alignment: .firstTextBaseline) {
                 Text(entry.todayAmount)
-                    .font(.system(size: 19, weight: .bold))
+                    .font(.system(size: 16, weight: .bold))
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.55)
@@ -283,7 +283,7 @@ private struct LifeTallyRectangularWidget: View {
                         .currentDate,
                         format: .stopwatch(startingAt: latestEntryTimestamp)
                     )
-                        .font(.system(size: 19, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.orange)
                         .monospacedDigit()
                         .lineLimit(1)
@@ -292,7 +292,7 @@ private struct LifeTallyRectangularWidget: View {
                         .frame(width: 64, alignment: .trailing)
                 } else {
                     Text("--:--.--")
-                        .font(.system(size: 19, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                         .multilineTextAlignment(.trailing)
@@ -323,13 +323,13 @@ private struct LifeTallyRectangularWidget: View {
                 }
 
                 HStack(spacing: 4) {
-                    Text("+\(entry.oneTaskAmount)")
+                    Text(entry.tasksToNextLevel.formatted())
 
                     Spacer(minLength: 4)
 
-                    Text(entry.tasksToNextLevel.formatted())
+                    Text("+\(entry.oneTaskAmount)")
                 }
-                .font(.system(size: 7, weight: .bold))
+                .font(.system(size: 8, weight: .bold))
                 .foregroundStyle(.white)
                 .monospacedDigit()
                 .lineLimit(1)
@@ -357,7 +357,7 @@ private struct LifeTallyRectangularWidget: View {
                     .foregroundStyle(.green)
                     .accessibilityLabel("\(entry.levelGoalAmount) level goal")
             }
-            .font(.system(size: 8, weight: .semibold))
+            .font(.system(size: 10, weight: .semibold))
             .monospacedDigit()
             .lineLimit(1)
             .minimumScaleFactor(0.65)
