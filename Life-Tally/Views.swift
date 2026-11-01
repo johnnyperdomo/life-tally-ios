@@ -180,8 +180,13 @@ struct TodayCounterCard: View {
             completedTasks: store.lifetimeTasks,
             units: 5
         )
+        let thirtyTaskGrowth = ScoringRules.taskGrowthMultiplierTenThousandths(
+            completedTasks: store.lifetimeTasks,
+            units: 30
+        )
         let oneTaskMultiplier = levelMultiplier * oneTaskGrowth / 10_000
         let fiveTaskMultiplier = levelMultiplier * fiveTaskGrowth / 10_000
+        let thirtyTaskMultiplier = levelMultiplier * thirtyTaskGrowth / 10_000
         let multiplier = baseMultiplier * oneTaskMultiplier / 10_000
         let oneTaskReward = ScoringRules.taskPointsHundredths(
             units: 1,
@@ -198,6 +203,14 @@ struct TodayCounterCard: View {
             completedDays: summary.completedStreakBeforeDay,
             completedHabits: completedHabits,
             levelMultiplierTenThousandths: fiveTaskMultiplier
+        )
+        let thirtyTaskReward = ScoringRules.taskPointsHundredths(
+            units: 30,
+            goodSleep: summary.sleep,
+            failed: summary.failed,
+            completedDays: summary.completedStreakBeforeDay,
+            completedHabits: completedHabits,
+            levelMultiplierTenThousandths: thirtyTaskMultiplier
         )
 
         VStack(spacing: 22) {
@@ -220,6 +233,13 @@ struct TodayCounterCard: View {
             .accessibilityElement(children: .contain)
 
             HStack(spacing: 12) {
+                HoldTallyButton(
+                    amount: 30,
+                    rewardHundredths: thirtyTaskReward,
+                    canRemove: summary.tasks >= 30,
+                    onAdd: { log(30) },
+                    onRemove: { correct(30) }
+                )
                 HoldTallyButton(
                     amount: 5,
                     rewardHundredths: fiveTaskReward,
@@ -290,10 +310,12 @@ struct HoldTallyButton: View {
                 Text(
                     showsCorrectionIntent
                         ? "−\(LifeTallyFormat.points(rewardHundredths))"
-                        : "+\(LifeTallyFormat.points(rewardHundredths))"
+                        : LifeTallyFormat.points(rewardHundredths)
                 )
                 .font(.caption.weight(.bold))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
                 .opacity(0.88)
                 .contentTransition(.numericText())
             }
@@ -1196,6 +1218,51 @@ struct ChartDatum: Identifiable, Equatable {
     let points: Double
 }
 
+struct StatsPeriodSelector: View {
+    @Binding var selection: StatsPeriod
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(StatsPeriod.allCases) { period in
+                Button {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        selection = period
+                    }
+                } label: {
+                    Text(period.rawValue)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(
+                                    period == selection
+                                        ? Color(.systemBackground)
+                                        : Color.clear
+                                )
+                                .shadow(
+                                    color: .black.opacity(period == selection ? 0.12 : 0),
+                                    radius: 1.5,
+                                    y: 1
+                                )
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(period == selection ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .background(
+            Color(.systemGray5),
+            in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Statistics period")
+    }
+}
+
 struct StatsView: View {
     let store: LifeTallyStore
     @State private var period: StatsPeriod = .week
@@ -1204,10 +1271,7 @@ struct StatsView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
-                Picker("Period", selection: $period) {
-                    ForEach(StatsPeriod.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                StatsPeriodSelector(selection: $period)
                 StatsDateNavigation(store: store, period: period)
                 StatsSummaryGrid(store: store, dates: dates)
                 Picker("Chart metric", selection: $metric) {
@@ -1215,7 +1279,7 @@ struct StatsView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 320)
-                StatsChart(data: chartData, metric: metric)
+                StatsChart(data: chartData, metric: metric, period: period)
                 PaceCard(store: store)
             }
             .padding()
@@ -1368,6 +1432,7 @@ struct SummaryTile: View {
 struct StatsChart: View {
     let data: [ChartDatum]
     let metric: ChartMetric
+    let period: StatsPeriod
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -1384,11 +1449,29 @@ struct StatsChart: View {
                 .foregroundStyle(.secondary)
             Chart(data) { item in
                 BarMark(
-                    x: .value("Period", item.label),
+                    x: .value("Period", item.id),
                     y: .value(metric.rawValue, metric == .tasks ? Double(item.tasks) : item.points)
                 )
                 .foregroundStyle(.blue)
                 .cornerRadius(4)
+            }
+            .chartXAxis {
+                if period == .day {
+                    AxisMarks(values: .stride(by: .hour, count: 3)) {
+                        AxisTick()
+                        AxisValueLabel(format: .dateTime.hour())
+                    }
+                } else if period == .year || period == .all {
+                    AxisMarks(values: .automatic(desiredCount: 6)) {
+                        AxisTick()
+                        AxisValueLabel(format: .dateTime.month(.abbreviated))
+                    }
+                } else {
+                    AxisMarks(values: .automatic(desiredCount: 6)) {
+                        AxisTick()
+                        AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                    }
+                }
             }
             .frame(minHeight: 220)
             .accessibilityLabel("\(metric.rawValue) activity chart")

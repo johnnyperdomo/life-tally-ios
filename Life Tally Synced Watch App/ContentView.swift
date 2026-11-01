@@ -196,7 +196,7 @@ private struct WatchTallyButton: View {
             VStack(spacing: 1) {
                 Text("+\(amount)")
                     .font(.headline.weight(.bold))
-                Text("+\(reward)")
+                Text(reward)
                     .font(.caption2.weight(.semibold))
                     .monospacedDigit()
                     .lineLimit(1)
