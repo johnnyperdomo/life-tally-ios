@@ -49,14 +49,31 @@ final class PhoneWatchSyncCoordinator: NSObject, WCSessionDelegate {
             completedHabits: completedHabits
         )
         let levelMultiplier = ScoringRules.levelMultiplierTenThousandths(level: progress.level)
-        let combinedMultiplier = dailyMultiplier * levelMultiplier / 10_000
+        let oneTaskGrowth = ScoringRules.taskGrowthMultiplierTenThousandths(
+            completedTasks: store.lifetimeTasks
+        )
+        let fiveTaskGrowth = ScoringRules.taskGrowthMultiplierTenThousandths(
+            completedTasks: store.lifetimeTasks,
+            units: 5
+        )
+        let oneTaskMultiplier = levelMultiplier * oneTaskGrowth / 10_000
+        let fiveTaskMultiplier = levelMultiplier * fiveTaskGrowth / 10_000
+        let combinedMultiplier = dailyMultiplier * oneTaskMultiplier / 10_000
         let oneTaskReward = ScoringRules.taskPointsHundredths(
             units: 1,
             goodSleep: summary.sleep,
             failed: summary.failed,
             completedDays: summary.completedStreakBeforeDay,
             completedHabits: completedHabits,
-            levelMultiplierTenThousandths: levelMultiplier
+            levelMultiplierTenThousandths: oneTaskMultiplier
+        )
+        let fiveTaskReward = ScoringRules.taskPointsHundredths(
+            units: 5,
+            goodSleep: summary.sleep,
+            failed: summary.failed,
+            completedDays: summary.completedStreakBeforeDay,
+            completedHabits: completedHabits,
+            levelMultiplierTenThousandths: fiveTaskMultiplier
         )
         let latestEntryTimestamp = store.latestRemainingPositive(on: Date())?
             .timestamp.timeIntervalSince1970 ?? 0
@@ -70,8 +87,9 @@ final class PhoneWatchSyncCoordinator: NSObject, WCSessionDelegate {
             "levelCost": progress.levelCost,
             "combinedMultiplierHundredths": combinedMultiplier,
             "oneTaskRewardHundredths": oneTaskReward,
-            "fiveTaskRewardHundredths": oneTaskReward * 5,
+            "fiveTaskRewardHundredths": fiveTaskReward,
             "latestEntryTimestamp": latestEntryTimestamp,
+            "processedCommandIDs": UserDefaults.standard.stringArray(forKey: Self.processedCommandIDsKey) ?? [],
             "updatedAt": Date.now.timeIntervalSince1970
         ]
     }
@@ -121,6 +139,14 @@ final class PhoneWatchSyncCoordinator: NSObject, WCSessionDelegate {
     ) {
         Task { @MainActor in
             sendCurrentState()
+        }
+    }
+
+    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        Task { @MainActor in
+            if session.isReachable {
+                sendCurrentState()
+            }
         }
     }
 

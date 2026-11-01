@@ -2,15 +2,17 @@ import SwiftUI
 import WidgetKit
 
 private enum LifeTallyWidgetStorage {
-    static let suiteName = "group.devplaceholder.I1AQHERN.Life-Tally"
+    static let suiteName = "group.com.flytebuddyllc.lifetally"
     static let snapshotKey = "LifeTally.watch.syncedSnapshot"
 
     static func snapshot() -> LifeTallyWidgetEntry {
+        let defaults = UserDefaults(suiteName: suiteName)
+        // The extension can outlive the watch app's writes to the shared suite.
+        defaults?.synchronize()
         guard
-            let values = UserDefaults(suiteName: suiteName)?
-                .dictionary(forKey: snapshotKey)
+            let values = defaults?.dictionary(forKey: snapshotKey)
         else {
-            return .placeholder
+            return .waitingForSync
         }
 
         return LifeTallyWidgetEntry(
@@ -23,6 +25,7 @@ private enum LifeTallyWidgetStorage {
             levelCost: int64(values["levelCost"], fallback: 1),
             tasksToNextLevel: int(values["tasksToNextLevel"]),
             combinedMultiplierHundredths: int64(values["combinedMultiplierHundredths"], fallback: 100),
+            oneTaskRewardHundredths: oneTaskReward(in: values),
             latestEntryTimestamp: date(values["latestEntryTimestamp"])
         )
     }
@@ -33,6 +36,68 @@ private enum LifeTallyWidgetStorage {
 
     private static func int(_ value: Any?, fallback: Int = 0) -> Int {
         (value as? NSNumber)?.intValue ?? fallback
+    }
+
+    static func addOneTask(at date: Date) {
+        guard
+            let defaults = UserDefaults(suiteName: suiteName),
+            var values = defaults.dictionary(forKey: snapshotKey)
+        else {
+            return
+        }
+
+        let reward = oneTaskReward(in: values)
+        var level = int(values["level"], fallback: 1)
+        var pointsWithinLevel = int64(values["pointsWithinLevel"])
+        var levelCost = int64(values["levelCost"], fallback: levelCost(for: level))
+
+        values["lifetimePointsHundredths"] = int64(values["lifetimePointsHundredths"]) + reward
+        values["todayPointsHundredths"] = int64(values["todayPointsHundredths"]) + reward
+        values["todayTasks"] = int(values["todayTasks"]) + 1
+        values["latestEntryTimestamp"] = date.timeIntervalSince1970
+        values["updatedAt"] = date.timeIntervalSince1970
+
+        pointsWithinLevel += reward
+        while pointsWithinLevel >= levelCost {
+            pointsWithinLevel -= levelCost
+            level += 1
+            levelCost = Self.levelCost(for: level)
+        }
+
+        let nextReward = Int64((Double(reward) * 1.005).rounded())
+        let currentMultiplier = int64(values["combinedMultiplierHundredths"], fallback: 100)
+        let remainingPoints = max(0, levelCost - pointsWithinLevel)
+        values["oneTaskRewardHundredths"] = nextReward
+        values["combinedMultiplierHundredths"] = Int64((Double(currentMultiplier) * 1.005).rounded())
+        values["level"] = level
+        values["pointsWithinLevel"] = pointsWithinLevel
+        values["levelCost"] = levelCost
+        values["tasksToNextLevel"] = nextReward > 0
+            ? Int((remainingPoints + nextReward - 1) / nextReward)
+            : 0
+
+        defaults.set(values, forKey: snapshotKey)
+        defaults.synchronize()
+    }
+
+    private static func oneTaskReward(in values: [String: Any]) -> Int64 {
+        if let exactReward = (values["oneTaskRewardHundredths"] as? NSNumber)?.int64Value {
+            return exactReward
+        }
+
+        // Older snapshots predate the exact reward field. The combined multiplier
+        // already includes the daily and level multipliers.
+        return int64(values["combinedMultiplierHundredths"], fallback: 100) * 100
+    }
+
+    private static func levelCost(for level: Int) -> Int64 {
+        var cost: Int64 = 120_000
+        if level > 1 {
+            for _ in 1..<level {
+                cost = cost * 118 / 100
+            }
+        }
+        return cost * (10_000 + Int64(max(0, level - 1)) * 960) / 10_000
     }
 
     private static func date(_ value: Any?) -> Date? {
@@ -51,7 +116,25 @@ struct LifeTallyWidgetEntry: TimelineEntry {
     let levelCost: Int64
     let tasksToNextLevel: Int
     let combinedMultiplierHundredths: Int64
+    let oneTaskRewardHundredths: Int64
     let latestEntryTimestamp: Date?
+
+    var hasData = true
+
+    static let waitingForSync = LifeTallyWidgetEntry(
+        date: .now,
+        lifetimePointsHundredths: 0,
+        todayPointsHundredths: 0,
+        todayTasks: 0,
+        level: 1,
+        pointsWithinLevel: 0,
+        levelCost: 120_000,
+        tasksToNextLevel: 0,
+        combinedMultiplierHundredths: 100,
+        oneTaskRewardHundredths: 10_000,
+        latestEntryTimestamp: nil,
+        hasData: false
+    )
 
     static let placeholder = LifeTallyWidgetEntry(
         date: .now,
@@ -63,6 +146,7 @@ struct LifeTallyWidgetEntry: TimelineEntry {
         levelCost: 10_000_000,
         tasksToNextLevel: 45,
         combinedMultiplierHundredths: 687,
+        oneTaskRewardHundredths: 72_194,
         latestEntryTimestamp: Date().addingTimeInterval(-83.45)
     )
 
@@ -77,6 +161,14 @@ struct LifeTallyWidgetEntry: TimelineEntry {
     var multiplier: String {
         let value = Decimal(combinedMultiplierHundredths) / 100
         return value.formatted(.number.precision(.fractionLength(0...2))) + "×"
+    }
+
+    var oneTaskAmount: String {
+        currency(oneTaskRewardHundredths)
+    }
+
+    var nextLevelAmount: String {
+        currency(max(0, levelCost - pointsWithinLevel))
     }
 
     var levelProgress: Double {
@@ -118,6 +210,27 @@ struct LifeTallyWidgetEntryView: View {
     let entry: LifeTallyWidgetEntry
 
     var body: some View {
+        if entry.hasData {
+            content
+        } else {
+            switch family {
+            case .accessoryInline:
+                Text("Open Life Tally to sync")
+            case .accessoryCircular, .accessoryCorner:
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .accessibilityLabel("Open Life Tally to sync")
+            default:
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Life Tally").font(.headline)
+                    Text("Open the watch and iPhone apps to sync.")
+                        .font(.caption)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch family {
         case .accessoryCircular:
             LifeTallyCircularWidget(entry: entry)
@@ -136,35 +249,88 @@ private struct LifeTallyRectangularWidget: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text("Today")
-                    .font(.caption2.weight(.semibold))
-                Spacer()
-                Text("Level \(entry.level)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            Text("Today")
+                .font(.system(size: 8, weight: .semibold))
+
+            HStack(alignment: .firstTextBaseline) {
+                Text(entry.todayAmount)
+                    .font(.system(size: 19, weight: .bold))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.55)
+
+                Spacer(minLength: 4)
+
+                if let latestEntryTimestamp = entry.latestEntryTimestamp {
+                    // Live timer text needs a bounded width in the widget renderer.
+                    // Its unconstrained ideal width can prevent updated timelines from rendering.
+                    Text(latestEntryTimestamp, style: .timer)
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(.orange)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 64, alignment: .trailing)
+                } else {
+                    Text("--:--.--")
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 64, alignment: .trailing)
+                }
             }
+            .frame(maxWidth: .infinity)
 
-            Text(entry.todayAmount)
-                .font(.headline.weight(.bold))
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.55)
+            ZStack {
+                Capsule()
+                    .fill(.secondary.opacity(0.18))
 
-            ProgressView(value: entry.levelProgress)
-                .progressViewStyle(.linear)
-                .tint(.blue)
+                GeometryReader { geometry in
+                    Capsule()
+                        .fill(.blue)
+                        .frame(width: geometry.size.width * entry.levelProgress)
+                }
+
+                Text(entry.nextLevelAmount)
+                    .font(.system(size: 7, weight: .semibold))
+                    .foregroundStyle(.primary.opacity(0.7))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.horizontal, 4)
+            }
+            .frame(height: 11)
+            .clipShape(Capsule())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Progress to next level")
+            .accessibilityValue("\(entry.nextLevelAmount) remaining")
+
+            Spacer(minLength: 0)
 
             HStack {
-                Label("\(entry.todayTasks) tasks", systemImage: "checkmark.circle.fill")
-                    .widgetAccentable()
-                Spacer()
-                Text("\(entry.tasksToNextLevel) to L\(entry.level + 1)")
+                HStack(spacing: 2) {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text(entry.todayTasks.formatted())
+                }
+                .widgetAccentable()
+                .accessibilityElement(children: .combine)
+
+                Spacer(minLength: 4)
+
+                Text("+\(entry.oneTaskAmount)")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(.green)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
             }
-            .font(.caption2)
+            .font(.system(size: 8))
             .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
         }
-        .containerBackground(.fill.tertiary, for: .widget)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -201,72 +367,31 @@ private struct LifeTallyCornerWidget: View {
 }
 
 struct Life_Tally_Widget: Widget {
-    static let kind = "Life_Tally_Widget"
+    nonisolated static let kind = "Life_Tally_Widget_v6"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: Self.kind, provider: LifeTallyWidgetProvider()) { entry in
             LifeTallyWidgetEntryView(entry: entry)
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Life Tally")
         .description("See today's progress and task count at a glance.")
-        .supportedFamilies([.accessoryRectangular])
+        .supportedFamilies([.accessoryRectangular, .accessoryCircular, .accessoryInline, .accessoryCorner])
     }
 }
 
-struct LifeTallyTimerWidget: Widget {
-    static let kind = "Life_Tally_Timer_Widget"
+// A separate identity lets us compare a fresh widget with existing installations.
+struct LifeTallyTestWidget: Widget {
+    nonisolated static let kind = "Life_Tally_Widget_Test"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: Self.kind, provider: LifeTallyWidgetProvider()) { entry in
-            LifeTallyStopwatchView(entryTimestamp: entry.latestEntryTimestamp)
+            LifeTallyWidgetEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
-        .configurationDisplayName("Task Stopwatch")
-        .description("Time since your most recent task entry.")
-        .supportedFamilies([.accessoryCircular])
-    }
-}
-
-private struct LifeTallyStopwatchView: View {
-    let entryTimestamp: Date?
-
-    var body: some View {
-        ZStack {
-            AccessoryWidgetBackground()
-
-            ForEach(0..<60, id: \.self) { tick in
-                Capsule()
-                    .fill(tick.isMultiple(of: 5) ? .primary : .secondary)
-                    .frame(width: tick.isMultiple(of: 5) ? 1.5 : 1, height: tick.isMultiple(of: 5) ? 5 : 3)
-                    .offset(y: -25)
-                    .rotationEffect(.degrees(Double(tick) * 6))
-            }
-
-            if let entryTimestamp {
-                Text(
-                    .currentDate,
-                    format: .stopwatch(
-                        startingAt: entryTimestamp,
-                        showsHours: false,
-                        maxFieldCount: 2,
-                        maxPrecision: .seconds(1)
-                    )
-                )
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(.orange)
-                .monospacedDigit()
-                .minimumScaleFactor(0.45)
-                .lineLimit(1)
-                .padding(.horizontal, 7)
-            } else {
-                Text("--:--")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(.orange)
-                .monospacedDigit()
-            }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Time since the latest task")
+        .configurationDisplayName("Life Tally Test")
+        .description("A fresh widget using the same Life Tally data and display.")
+        .supportedFamilies([.accessoryRectangular, .accessoryCircular, .accessoryInline, .accessoryCorner])
     }
 }
 

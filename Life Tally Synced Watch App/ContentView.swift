@@ -8,13 +8,6 @@ struct ContentView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 10) {
-                WatchProgressHeader(
-                    lifetimeAmount: store.lifetimeAmountText,
-                    level: store.level,
-                    levelProgress: store.levelProgress,
-                    nextLevelAmount: store.nextLevelText
-                )
-
                 WatchCounterSummary(
                     todayAmount: store.todayAmountText,
                     rate: store.rateText,
@@ -24,23 +17,31 @@ struct ContentView: View {
 
                 HStack(spacing: 8) {
                     WatchTallyButton(
-                        amount: 1,
-                        reward: store.rewardText(for: 1)
-                    ) {
-                        add(1)
-                    }
-
-                    WatchTallyButton(
                         amount: 5,
                         reward: store.rewardText(for: 5)
                     ) {
                         add(5)
                     }
+
+                    WatchTallyButton(
+                        amount: 1,
+                        reward: store.rewardText(for: 1)
+                    ) {
+                        add(1)
+                    }
                 }
+
                 Text(store.syncStatusText)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+
+                WatchProgressHeader(
+                    lifetimeAmount: store.lifetimeAmountText,
+                    level: store.level,
+                    levelProgress: store.levelProgress,
+                    nextLevelAmount: store.nextLevelText
+                )
             }
             .padding(.horizontal, 4)
             .padding(.bottom, 8)

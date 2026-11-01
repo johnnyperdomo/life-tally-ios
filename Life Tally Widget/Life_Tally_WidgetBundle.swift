@@ -11,7 +11,7 @@ import SwiftUI
 @main
 struct Life_Tally_WidgetBundle: WidgetBundle {
     var body: some Widget {
-        LifeTallyTimerWidget()
         Life_Tally_Widget()
+        LifeTallyTestWidget()
     }
 }

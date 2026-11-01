@@ -147,12 +147,14 @@ struct HabitDayMark: Identifiable, Equatable {
 }
 
 enum ScoringRules {
+    // The first base task earns $100 before streak, sleep, habit, and level multipliers.
     static let economyScale: Int64 = 100
     static let ultimateGoalHundredths: Int64 = 1_000_000_000 * 100
     static let sleepBonusHundredths: Int64 = 50 * economyScale * 100
     static let successBonusHundredths: Int64 = 100 * economyScale * 100
     static let habitCompletionHundredths: Int64 = 5 * economyScale * 100
-    static let startingLevelCostHundredths: Int64 = 10_000 * 100
+    // Level 3 stays near 20–30 additions from a fresh start; progression remains money-based.
+    static let startingLevelCostHundredths: Int64 = 1_200 * 100
     static let levelCostGrowthPercent: Int64 = 18
 
     static func streakMultiplierHundredths(completedDays: Int) -> Int64 {
@@ -187,6 +189,16 @@ enum ScoringRules {
 
     static func levelMultiplierTenThousandths(level: Int) -> Int64 {
         10_000 + Int64(max(0, level - 1)) * 960
+    }
+
+    static func taskGrowthMultiplierTenThousandths(completedTasks: Int, units: Int = 1) -> Int64 {
+        let taskCount = max(0, completedTasks)
+        let unitCount = max(1, units)
+        let firstMultiplier = pow(1.005, Double(taskCount))
+        let averageMultiplier = (0..<unitCount).reduce(0.0) { total, offset in
+            total + firstMultiplier * pow(1.005, Double(offset))
+        } / Double(unitCount)
+        return Int64((averageMultiplier * 10_000).rounded())
     }
 
     static func taskPointsHundredths(

@@ -19,23 +19,25 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         var latestEntryTimestamp: Date?
         var updatedAt: Date
         var isAuthoritative: Bool?
+        var syncState: WatchSyncState?
     }
 
     private static let storageKey = "LifeTally.watch.syncedSnapshot"
-    private static let widgetKind = "Life_Tally_Widget"
-    private static let timerWidgetKind = "Life_Tally_Timer_Widget"
-    private static let widgetSuiteName = "group.devplaceholder.I1AQHERN.Life-Tally"
+    private static let economyVersion = 3
+    private static let economyVersionKey = "LifeTally.watch.economyVersion"
+    private static let widgetSuiteName = "group.com.flytebuddyllc.lifetally"
 
     private let session: WCSession?
+    private var syncState = WatchSyncState()
     private(set) var lifetimePointsHundredths: Int64 = 0
     private(set) var todayPointsHundredths: Int64 = 0
     private(set) var todayTasks = 0
     private(set) var level = 1
     private(set) var pointsWithinLevel: Int64 = 0
-    private(set) var levelCost: Int64 = 1_000_000
+    private(set) var levelCost: Int64 = 120_000
     private(set) var combinedMultiplierHundredths: Int64 = 100
     private(set) var oneTaskRewardHundredths: Int64 = 10_000
-    private(set) var fiveTaskRewardHundredths: Int64 = 50_000
+    private(set) var fiveTaskRewardHundredths: Int64 = 50_500
     private(set) var latestEntryTimestamp: Date?
     private(set) var lastUpdated: Date?
     private(set) var isReachable = false
@@ -45,7 +47,12 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
     override init() {
         session = WCSession.isSupported() ? .default : nil
         super.init()
+        migrateEconomyIfNeeded()
         load()
+        // Restore the shared widget cache even when the phone is offline.
+        if lastUpdated != nil {
+            save()
+        }
 
         session?.delegate = self
         session?.activate()
@@ -92,8 +99,15 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
     }
 
     func requestSync() {
+        // Republish known data when returning from the widget, even while offline.
+        if lastUpdated != nil {
+            save()
+        }
         guard let session, session.activationState == .activated else { return }
         isReachable = session.isReachable
+        for (commandID, amount) in syncState.pendingCommands {
+            sendCommand(["addTasks": amount, "commandID": commandID], using: session)
+        }
 
         if !session.receivedApplicationContext.isEmpty {
             apply(session.receivedApplicationContext)
@@ -122,37 +136,45 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
 
     func addTasks(_ amount: Int) {
         guard amount == 1 || amount == 5 else { return }
+        let commandID = UUID().uuidString
+        syncState.pendingCommands[commandID] = amount
         let message: [String: Any] = [
             "addTasks": amount,
-            "commandID": UUID().uuidString
+            "commandID": commandID
         ]
 
-        if let session, session.activationState == .activated, session.isReachable {
+        // Update the Watch UI and widget snapshot immediately. The phone reply
+        // reconciles this optimistic state with the authoritative data.
+        applyOptimisticAddition(amount)
+
+        guard let session, session.activationState == .activated else { return }
+        sendCommand(message, using: session)
+    }
+
+    private func sendCommand(_ message: [String: Any], using session: WCSession) {
+        let commandID = message["commandID"] as? String
+        if session.isReachable {
             isUpdating = true
             session.sendMessage(
                 message,
                 replyHandler: { [weak self] reply in
                     Task { @MainActor in
-                        self?.apply(reply)
+                        self?.apply(reply, acknowledging: commandID)
                         self?.isUpdating = false
                     }
                 },
                 errorHandler: { [weak self] _ in
                     session.transferUserInfo(message)
                     Task { @MainActor in
-                        self?.applyOptimisticAddition(amount)
                         self?.isUpdating = false
                     }
                 }
             )
-        } else if let session {
+        } else {
             if session.activationState == .activated {
                 session.transferUserInfo(message)
             }
-            applyOptimisticAddition(amount)
             isUpdating = false
-        } else {
-            applyOptimisticAddition(amount)
         }
     }
 
@@ -165,21 +187,28 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         while pointsWithinLevel >= levelCost {
             pointsWithinLevel -= levelCost
             level += 1
+            levelCost = Self.levelCost(for: level)
         }
+        oneTaskRewardHundredths = Self.increasedReward(oneTaskRewardHundredths, by: amount)
+        fiveTaskRewardHundredths = Self.fiveTaskReward(startingAt: oneTaskRewardHundredths)
+        combinedMultiplierHundredths = Self.increasedReward(combinedMultiplierHundredths, by: amount)
         latestEntryTimestamp = .now
         lastUpdated = .now
+        hasAuthoritativeData = true
         save()
     }
 
-    private func apply(_ payload: [String: Any]) {
+    private func apply(_ payload: [String: Any], acknowledging commandID: String? = nil) {
         guard let lifetime = Self.int64(payload["lifetimePointsHundredths"]) else { return }
 
-        if
-            let timestamp = payload["updatedAt"] as? TimeInterval,
-            let lastUpdated,
-            timestamp < lastUpdated.timeIntervalSince1970,
-            hasAuthoritativeData
-        {
+        // A phone snapshot must include all local taps before replacing the
+        // optimistic total. Compare phone timestamps only with other phone timestamps.
+        guard syncState.accept(
+            updatedAt: (payload["updatedAt"] as? NSNumber)?.doubleValue,
+            acknowledgedCommandIDs: (payload["processedCommandIDs"] as? [String] ?? [])
+                + (commandID.map { [$0] } ?? [])
+        ) else {
+            save()
             return
         }
 
@@ -192,7 +221,7 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         levelCost = Self.int64(payload["levelCost"]) ?? 1
         combinedMultiplierHundredths = Self.int64(payload["combinedMultiplierHundredths"]) ?? 100
         oneTaskRewardHundredths = Self.int64(payload["oneTaskRewardHundredths"]) ?? 10_000
-        fiveTaskRewardHundredths = Self.int64(payload["fiveTaskRewardHundredths"]) ?? 50_000
+        fiveTaskRewardHundredths = Self.int64(payload["fiveTaskRewardHundredths"]) ?? 50_500
         if let timestamp = payload["latestEntryTimestamp"] as? TimeInterval, timestamp > 0 {
             latestEntryTimestamp = Date(timeIntervalSince1970: timestamp)
         } else {
@@ -206,6 +235,16 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         }
 
         save()
+    }
+
+    private func migrateEconomyIfNeeded() {
+        guard UserDefaults.standard.integer(forKey: Self.economyVersionKey) < Self.economyVersion else {
+            return
+        }
+
+        UserDefaults.standard.removeObject(forKey: Self.storageKey)
+        UserDefaults(suiteName: Self.widgetSuiteName)?.removeObject(forKey: Self.storageKey)
+        UserDefaults.standard.set(Self.economyVersion, forKey: Self.economyVersionKey)
     }
 
     private func load() {
@@ -228,6 +267,7 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         latestEntryTimestamp = snapshot.latestEntryTimestamp
         lastUpdated = snapshot.updatedAt
         hasAuthoritativeData = snapshot.isAuthoritative ?? false
+        syncState = snapshot.syncState ?? WatchSyncState()
     }
 
     private func save() {
@@ -247,26 +287,56 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
             fiveTaskRewardHundredths: fiveTaskRewardHundredths,
             latestEntryTimestamp: latestEntryTimestamp,
             updatedAt: lastUpdated ?? .now,
-            isAuthoritative: hasAuthoritativeData
+            isAuthoritative: hasAuthoritativeData,
+            syncState: syncState
         )
 
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         UserDefaults.standard.set(data, forKey: Self.storageKey)
 
-        UserDefaults(suiteName: Self.widgetSuiteName)?.set([
-            "lifetimePointsHundredths": lifetimePointsHundredths,
-            "todayPointsHundredths": todayPointsHundredths,
-            "todayTasks": todayTasks,
-            "level": level,
-            "pointsWithinLevel": pointsWithinLevel,
-            "levelCost": levelCost,
-            "tasksToNextLevel": tasksToNextLevel,
-            "combinedMultiplierHundredths": combinedMultiplierHundredths,
-            "latestEntryTimestamp": latestEntryTimestamp?.timeIntervalSince1970 ?? 0,
-            "updatedAt": (lastUpdated ?? .now).timeIntervalSince1970
-        ], forKey: Self.storageKey)
-        WidgetCenter.shared.reloadTimelines(ofKind: Self.widgetKind)
-        WidgetCenter.shared.reloadTimelines(ofKind: Self.timerWidgetKind)
+        if let widgetDefaults = UserDefaults(suiteName: Self.widgetSuiteName) {
+            let values: [String: Any] = [
+                "lifetimePointsHundredths": lifetimePointsHundredths,
+                "todayPointsHundredths": todayPointsHundredths,
+                "todayTasks": todayTasks,
+                "level": level,
+                "pointsWithinLevel": pointsWithinLevel,
+                "levelCost": levelCost,
+                "tasksToNextLevel": tasksToNextLevel,
+                "combinedMultiplierHundredths": combinedMultiplierHundredths,
+                "oneTaskRewardHundredths": oneTaskRewardHundredths,
+                "latestEntryTimestamp": latestEntryTimestamp?.timeIntervalSince1970 ?? 0,
+                "updatedAt": (lastUpdated ?? .now).timeIntervalSince1970
+            ]
+            var previous = widgetDefaults.dictionary(forKey: Self.storageKey) ?? [:]
+            var visibleValues = values
+            previous.removeValue(forKey: "updatedAt")
+            visibleValues.removeValue(forKey: "updatedAt")
+            guard !NSDictionary(dictionary: previous).isEqual(to: visibleValues) else { return }
+            widgetDefaults.set(values, forKey: Self.storageKey)
+            widgetDefaults.synchronize()
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+    }
+
+    private static func increasedReward(_ reward: Int64, by tasks: Int) -> Int64 {
+        Int64((Double(reward) * pow(1.005, Double(max(0, tasks)))).rounded())
+    }
+
+    private static func fiveTaskReward(startingAt reward: Int64) -> Int64 {
+        (0..<5).reduce(Int64(0)) { total, offset in
+            total + increasedReward(reward, by: offset)
+        }
+    }
+
+    private static func levelCost(for level: Int) -> Int64 {
+        var cost: Int64 = 120_000
+        if level > 1 {
+            for _ in 1..<level {
+                cost = cost * 118 / 100
+            }
+        }
+        return cost * (10_000 + Int64(max(0, level - 1)) * 960) / 10_000
     }
 
     private static func dollarText(_ hundredths: Int64) -> String {
@@ -335,5 +405,23 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         Task { @MainActor in
             apply(userInfo)
         }
+    }
+}
+
+/// Tracks local taps until the phone confirms that its snapshot includes them.
+struct WatchSyncState: Codable {
+    var pendingCommands: [String: Int] = [:]
+    var lastPhoneUpdate: TimeInterval?
+
+    mutating func accept(updatedAt: TimeInterval?, acknowledgedCommandIDs: [String]) -> Bool {
+        if let lastPhoneUpdate {
+            guard let updatedAt, updatedAt >= lastPhoneUpdate else { return false }
+        }
+
+        lastPhoneUpdate = updatedAt
+        for commandID in acknowledgedCommandIDs {
+            pendingCommands.removeValue(forKey: commandID)
+        }
+        return pendingCommands.isEmpty
     }
 }

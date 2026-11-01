@@ -72,7 +72,7 @@ struct TodayView: View {
         }
         .sheet(isPresented: $showingSettings) {
             NavigationStack {
-                SettingsView(errorMessage: store.lastError)
+                SettingsView(store: store)
             }
         }
         .task(id: scenePhase) {
@@ -173,14 +173,23 @@ struct TodayCounterCard: View {
             completedHabits: completedHabits
         )
         let levelMultiplier = ScoringRules.levelMultiplierTenThousandths(level: store.progression.level)
-        let multiplier = baseMultiplier * levelMultiplier / 10_000
+        let oneTaskGrowth = ScoringRules.taskGrowthMultiplierTenThousandths(
+            completedTasks: store.lifetimeTasks
+        )
+        let fiveTaskGrowth = ScoringRules.taskGrowthMultiplierTenThousandths(
+            completedTasks: store.lifetimeTasks,
+            units: 5
+        )
+        let oneTaskMultiplier = levelMultiplier * oneTaskGrowth / 10_000
+        let fiveTaskMultiplier = levelMultiplier * fiveTaskGrowth / 10_000
+        let multiplier = baseMultiplier * oneTaskMultiplier / 10_000
         let oneTaskReward = ScoringRules.taskPointsHundredths(
             units: 1,
             goodSleep: summary.sleep,
             failed: summary.failed,
             completedDays: summary.completedStreakBeforeDay,
             completedHabits: completedHabits,
-            levelMultiplierTenThousandths: levelMultiplier
+            levelMultiplierTenThousandths: oneTaskMultiplier
         )
         let fiveTaskReward = ScoringRules.taskPointsHundredths(
             units: 5,
@@ -188,7 +197,7 @@ struct TodayCounterCard: View {
             failed: summary.failed,
             completedDays: summary.completedStreakBeforeDay,
             completedHabits: completedHabits,
-            levelMultiplierTenThousandths: levelMultiplier
+            levelMultiplierTenThousandths: fiveTaskMultiplier
         )
 
         VStack(spacing: 22) {
@@ -212,18 +221,18 @@ struct TodayCounterCard: View {
 
             HStack(spacing: 12) {
                 HoldTallyButton(
-                    amount: 1,
-                    rewardHundredths: oneTaskReward,
-                    canRemove: summary.tasks >= 1,
-                    onAdd: { log(1) },
-                    onRemove: { correct(1) }
-                )
-                HoldTallyButton(
                     amount: 5,
                     rewardHundredths: fiveTaskReward,
                     canRemove: summary.tasks >= 5,
                     onAdd: { log(5) },
                     onRemove: { correct(5) }
+                )
+                HoldTallyButton(
+                    amount: 1,
+                    rewardHundredths: oneTaskReward,
+                    canRemove: summary.tasks >= 1,
+                    onAdd: { log(1) },
+                    onRemove: { correct(1) }
                 )
             }
 
@@ -294,7 +303,7 @@ struct HoldTallyButton: View {
                 HStack(spacing: 4) {
                     Image(systemName: "dollarsign.circle.fill")
                         .font(.caption)
-                    Text("+\(LifeTallyFormat.points(rewardHundredths))")
+                    Text(LifeTallyFormat.points(rewardHundredths))
                         .monospacedDigit()
                 }
                 .font(.subheadline.weight(.bold))
@@ -1665,14 +1674,14 @@ struct ProgressionMetric: View {
 }
 
 struct SettingsView: View {
-    let errorMessage: String?
+    let store: LifeTallyStore
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         Form {
             Section("Storage") {
                 Label("Saved locally with SwiftData", systemImage: "internaldrive")
-                if let errorMessage {
+                if let errorMessage = store.lastError {
                     Label(errorMessage, systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.orange)
                 }
@@ -1683,12 +1692,50 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+            ResetDataSection(store: store)
         }
         .navigationTitle("Settings")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") { dismiss() }
             }
+        }
+    }
+}
+
+private struct ResetDataSection: View {
+    private static let confirmationPhrase = "RESET"
+
+    let store: LifeTallyStore
+    @State private var confirmationText = ""
+    @State private var showingConfirmation = false
+
+    var body: some View {
+        Section("Reset Data") {
+            Text("Permanently delete all Life Tally data, including tasks, history, habits, and progress.")
+                .foregroundStyle(.secondary)
+
+            Button("Reset All Data", systemImage: "trash", role: .destructive) {
+                confirmationText = ""
+                showingConfirmation = true
+            }
+        }
+        .alert("Are you sure you want to reset data?", isPresented: $showingConfirmation) {
+            TextField("Type RESET to confirm", text: $confirmationText)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+
+            Button("Reset Data", role: .destructive) {
+                store.resetAllData()
+                confirmationText = ""
+            }
+            .disabled(confirmationText != Self.confirmationPhrase)
+
+            Button("Cancel", role: .cancel) {
+                confirmationText = ""
+            }
+        } message: {
+            Text("This cannot be undone. Type RESET to permanently delete all of your data.")
         }
     }
 }

@@ -6,6 +6,9 @@ import SwiftUI
 @MainActor
 @Observable
 final class LifeTallyStore {
+    private static let economyVersion = 3
+    private static let economyVersionKey = "LifeTally.economyVersion"
+
     private let context: ModelContext
     private(set) var entries: [TallyEntry] = []
     private(set) var days: [DailyState] = []
@@ -20,6 +23,12 @@ final class LifeTallyStore {
     init(context: ModelContext) {
         self.context = context
         reload()
+
+        if UserDefaults.standard.integer(forKey: Self.economyVersionKey) < Self.economyVersion,
+           resetAllData() {
+            UserDefaults.standard.set(Self.economyVersion, forKey: Self.economyVersionKey)
+        }
+
         reconcile()
     }
 
@@ -59,6 +68,32 @@ final class LifeTallyStore {
         }
     }
 
+    @discardableResult
+    func resetAllData(now: Date = Date()) -> Bool {
+        do {
+            try context.delete(model: TallyEntry.self)
+            try context.delete(model: DailyState.self)
+            try context.delete(model: TrackedHabit.self)
+            try context.delete(model: HabitCompletion.self)
+            try context.delete(model: AppProfile.self)
+
+            let startOfToday = Calendar.autoupdatingCurrent.startOfDay(for: now)
+            context.insert(AppProfile(trackingStart: startOfToday))
+            context.insert(DailyState(dayKey: dayKey(startOfToday), date: startOfToday))
+            try context.save()
+
+            selectedHistoryDate = now
+            selectedStatsDate = now
+            reload()
+            changeHandler?()
+            return true
+        } catch {
+            context.rollback()
+            lastError = "Data could not be reset: \(error.localizedDescription)"
+            return false
+        }
+    }
+
     func reconcile(now: Date = Date()) {
         guard let start = profile?.trackingStart else { return }
         let calendar = Calendar.autoupdatingCurrent
@@ -84,13 +119,18 @@ final class LifeTallyStore {
         let latest = positive.max(by: { $0.timestamp < $1.timestamp })
         let interval = latest.map { max(0, now.timeIntervalSince($0.timestamp)) }
         let levelMultiplier = ScoringRules.levelMultiplierTenThousandths(level: progression.level)
+        let growthMultiplier = ScoringRules.taskGrowthMultiplierTenThousandths(
+            completedTasks: lifetimeTasks,
+            units: units
+        )
+        let rewardMultiplier = levelMultiplier * growthMultiplier / 10_000
         let entry = TallyEntry(
             timestamp: now,
             dayKey: day.dayKey,
             kind: .task,
             taskUnits: units,
             intervalSeconds: interval,
-            levelMultiplierTenThousandths: levelMultiplier
+            levelMultiplierTenThousandths: rewardMultiplier
         )
         context.insert(entry)
         saveAndReload()
@@ -100,7 +140,7 @@ final class LifeTallyStore {
             failed: day.habitFailed,
             completedDays: completedStreak(before: day.date),
             completedHabits: completedHabitCount(on: day.date),
-            levelMultiplierTenThousandths: levelMultiplier
+            levelMultiplierTenThousandths: rewardMultiplier
         )
     }
 
