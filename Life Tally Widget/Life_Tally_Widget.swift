@@ -279,7 +279,10 @@ private struct LifeTallyRectangularWidget: View {
                 if let latestEntryTimestamp = entry.latestEntryTimestamp {
                     // Live timer text needs a bounded width in the widget renderer.
                     // Its unconstrained ideal width can prevent updated timelines from rendering.
-                    Text(latestEntryTimestamp, style: .timer)
+                    Text(
+                        .currentDate,
+                        format: .stopwatch(startingAt: latestEntryTimestamp)
+                    )
                         .font(.system(size: 19, weight: .semibold))
                         .foregroundStyle(.orange)
                         .monospacedDigit()
@@ -318,6 +321,22 @@ private struct LifeTallyRectangularWidget: View {
                         }
                     }
                 }
+
+                HStack(spacing: 4) {
+                    Text(entry.tasksToNextLevel.formatted())
+
+                    Spacer(minLength: 4)
+
+                    Text("+\(entry.oneTaskAmount)")
+                }
+                .font(.system(size: 7, weight: .bold))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .shadow(color: .black.opacity(0.7), radius: 1)
+                .padding(.horizontal, 4)
+                .accessibilityHidden(true)
             }
             .frame(height: 11)
             .clipShape(Capsule())
@@ -328,8 +347,9 @@ private struct LifeTallyRectangularWidget: View {
             Spacer(minLength: 0)
 
             HStack {
-                Text("+\(entry.oneTaskAmount)")
-                    .foregroundStyle(.green)
+                Text(entry.lifetimeAmount)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("\(entry.lifetimeAmount) lifetime total")
 
                 Spacer(minLength: 4)
 
