@@ -26,7 +26,9 @@ private enum LifeTallyWidgetStorage {
             tasksToNextLevel: int(values["tasksToNextLevel"]),
             combinedMultiplierHundredths: int64(values["combinedMultiplierHundredths"], fallback: 100),
             oneTaskRewardHundredths: oneTaskReward(in: values),
-            latestEntryTimestamp: date(values["latestEntryTimestamp"])
+            latestEntryTimestamp: date(values["latestEntryTimestamp"]),
+            isStopwatchPaused: values["isStopwatchPaused"] as? Bool ?? false,
+            stopwatchPausedElapsed: (values["stopwatchPausedElapsed"] as? NSNumber)?.doubleValue ?? 0
         )
     }
 
@@ -129,6 +131,8 @@ struct LifeTallyWidgetEntry: TimelineEntry {
     let combinedMultiplierHundredths: Int64
     let oneTaskRewardHundredths: Int64
     let latestEntryTimestamp: Date?
+    let isStopwatchPaused: Bool
+    let stopwatchPausedElapsed: TimeInterval
 
     var hasData = true
 
@@ -144,6 +148,8 @@ struct LifeTallyWidgetEntry: TimelineEntry {
         combinedMultiplierHundredths: 100,
         oneTaskRewardHundredths: 10_000,
         latestEntryTimestamp: nil,
+        isStopwatchPaused: false,
+        stopwatchPausedElapsed: 0,
         hasData: false
     )
 
@@ -158,7 +164,9 @@ struct LifeTallyWidgetEntry: TimelineEntry {
         tasksToNextLevel: 45,
         combinedMultiplierHundredths: 687,
         oneTaskRewardHundredths: 72_194,
-        latestEntryTimestamp: Date().addingTimeInterval(-83.45)
+        latestEntryTimestamp: Date().addingTimeInterval(-83.45),
+        isStopwatchPaused: false,
+        stopwatchPausedElapsed: 0
     )
 
     var todayAmount: String {
@@ -189,6 +197,15 @@ struct LifeTallyWidgetEntry: TimelineEntry {
     var levelProgress: Double {
         let progress = Double(pointsWithinLevel) / Double(max(1, levelCost))
         return min(max(progress, 0), 1)
+    }
+
+    var stopwatchPausedText: String {
+        let elapsed = max(0, stopwatchPausedElapsed)
+        return String(
+            format: "%d:%05.2f",
+            Int(elapsed) / 60,
+            elapsed.truncatingRemainder(dividingBy: 60)
+        )
     }
 
     private func currency(_ hundredths: Int64) -> String {
@@ -277,12 +294,17 @@ private struct LifeTallyRectangularWidget: View {
                 Spacer(minLength: 4)
 
                 if let latestEntryTimestamp = entry.latestEntryTimestamp {
-                    // Live timer text needs a bounded width in the widget renderer.
-                    // Its unconstrained ideal width can prevent updated timelines from rendering.
-                    Text(
-                        .currentDate,
-                        format: .stopwatch(startingAt: latestEntryTimestamp)
-                    )
+                    Group {
+                        if entry.isStopwatchPaused {
+                            Text(entry.stopwatchPausedText)
+                        } else {
+                            // Live timer text needs a bounded width in the widget renderer.
+                            Text(
+                                .currentDate,
+                                format: .stopwatch(startingAt: latestEntryTimestamp)
+                            )
+                        }
+                    }
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.orange)
                         .monospacedDigit()

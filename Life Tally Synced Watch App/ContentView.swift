@@ -12,7 +12,10 @@ struct ContentView: View {
                     todayAmount: store.todayAmountText,
                     rate: store.rateText,
                     tasks: store.todayTasks,
-                    latestEntryTimestamp: store.latestEntryTimestamp
+                    latestEntryTimestamp: store.latestEntryTimestamp,
+                    isStopwatchPaused: store.isStopwatchPaused,
+                    stopwatchPausedElapsed: store.stopwatchPausedElapsed,
+                    onTogglePause: { store.setStopwatchPaused(!store.isStopwatchPaused) }
                 )
 
                 HStack(spacing: 8) {
@@ -116,6 +119,9 @@ private struct WatchCounterSummary: View {
     let rate: String
     let tasks: Int
     let latestEntryTimestamp: Date?
+    let isStopwatchPaused: Bool
+    let stopwatchPausedElapsed: TimeInterval
+    let onTogglePause: () -> Void
 
     var body: some View {
         VStack(spacing: 4) {
@@ -143,39 +149,108 @@ private struct WatchCounterSummary: View {
                 Text("\(tasks) \(tasks == 1 ? "task" : "tasks")")
                     .fontWeight(.semibold)
                 Spacer()
-                WatchEntryTimer(entryTimestamp: latestEntryTimestamp)
+                WatchEntryTimer(
+                    entryTimestamp: latestEntryTimestamp,
+                    isPaused: isStopwatchPaused,
+                    pausedElapsed: stopwatchPausedElapsed,
+                    onTogglePause: onTogglePause
+                )
             }
             .font(.caption)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "Made today \(todayAmount). Current rate \(rate). \(tasks) tasks."
-        )
+        .accessibilityElement(children: .contain)
     }
 }
 
 private struct WatchEntryTimer: View {
     let entryTimestamp: Date?
+    let isPaused: Bool
+    let pausedElapsed: TimeInterval
+    let onTogglePause: () -> Void
+    @State private var displayedStart: Date?
+    @State private var displayedIsPaused: Bool
+    @State private var displayedPausedElapsed: TimeInterval
+
+    init(
+        entryTimestamp: Date?,
+        isPaused: Bool,
+        pausedElapsed: TimeInterval,
+        onTogglePause: @escaping () -> Void
+    ) {
+        self.entryTimestamp = entryTimestamp
+        self.isPaused = isPaused
+        self.pausedElapsed = pausedElapsed
+        self.onTogglePause = onTogglePause
+        _displayedStart = State(initialValue: entryTimestamp)
+        _displayedIsPaused = State(initialValue: isPaused)
+        _displayedPausedElapsed = State(initialValue: pausedElapsed)
+    }
 
     var body: some View {
-        if let entryTimestamp {
-            TimelineView(.periodic(from: .now, by: 0.05)) { context in
-                Label(
-                    Self.duration(context.date.timeIntervalSince(entryTimestamp)),
-                    systemImage: "timer"
-                )
+        if let start = displayedStart {
+            HStack(spacing: 4) {
+                Label {
+                    if displayedIsPaused {
+                        Text(Self.duration(displayedPausedElapsed))
+                    } else {
+                        Text(
+                            .currentDate,
+                            format: .stopwatch(startingAt: start, showsHours: false)
+                        )
+                    }
+                } icon: {
+                    Image(systemName: "timer")
+                }
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .accessibilityLabel("Since last entry")
-                .accessibilityValue(Self.duration(context.date.timeIntervalSince(entryTimestamp)))
-                .accessibilityAddTraits(.updatesFrequently)
+                .accessibilityValue(displayedIsPaused ? Self.duration(displayedPausedElapsed) : "Running")
+                .accessibilityAddTraits(displayedIsPaused ? [] : .updatesFrequently)
+
+                Button(action: togglePause) {
+                    Image(systemName: displayedIsPaused ? "play.fill" : "pause.fill")
+                        .frame(width: 30, height: 30)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.blue)
+                .accessibilityLabel(displayedIsPaused ? "Resume stopwatch" : "Pause stopwatch")
+            }
+            .onChange(of: entryTimestamp) { _, newValue in
+                displayedStart = newValue
+                displayedIsPaused = isPaused
+                displayedPausedElapsed = pausedElapsed
+            }
+            .onChange(of: isPaused) { _, newValue in
+                displayedIsPaused = newValue
+                displayedPausedElapsed = pausedElapsed
+                if !newValue {
+                    displayedStart = entryTimestamp
+                }
+            }
+            .onChange(of: pausedElapsed) { _, newValue in
+                if isPaused {
+                    displayedPausedElapsed = newValue
+                }
             }
         } else {
             Label("--:--", systemImage: "timer")
                 .foregroundStyle(.tertiary)
         }
+    }
+
+    private func togglePause() {
+        let now = Date.now
+        if displayedIsPaused {
+            displayedStart = now.addingTimeInterval(-displayedPausedElapsed)
+            displayedIsPaused = false
+        } else {
+            displayedPausedElapsed = max(0, now.timeIntervalSince(displayedStart ?? now))
+            displayedIsPaused = true
+        }
+        onTogglePause()
     }
 
     private static func duration(_ seconds: TimeInterval) -> String {

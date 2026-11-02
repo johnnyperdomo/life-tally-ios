@@ -8,6 +8,10 @@ import SwiftUI
 final class LifeTallyStore {
     private static let economyVersion = 3
     private static let economyVersionKey = "LifeTally.economyVersion"
+    private static let stopwatchEntryKey = "LifeTally.stopwatch.entry"
+    private static let stopwatchPausedKey = "LifeTally.stopwatch.paused"
+    private static let stopwatchElapsedKey = "LifeTally.stopwatch.elapsed"
+    private static let stopwatchStartKey = "LifeTally.stopwatch.start"
 
     private let context: ModelContext
     private(set) var entries: [TallyEntry] = []
@@ -16,12 +20,15 @@ final class LifeTallyStore {
     private(set) var habitCompletions: [HabitCompletion] = []
     private(set) var profile: AppProfile?
     private(set) var lastError: String?
+    private(set) var isStopwatchPaused = false
+    private(set) var stopwatchPausedElapsed: TimeInterval = 0
     var selectedHistoryDate = Date()
     var selectedStatsDate = Date()
     @ObservationIgnored private var changeHandler: (() -> Void)?
 
     init(context: ModelContext) {
         self.context = context
+        loadStopwatchState()
         reload()
 
         if UserDefaults.standard.integer(forKey: Self.economyVersionKey) < Self.economyVersion,
@@ -144,6 +151,7 @@ final class LifeTallyStore {
             levelMultiplierTenThousandths: rewardMultiplier
         )
         applyLevelProgress(for: units, startingCompletedTasks: lifetimeTasks)
+        resetStopwatch(for: now)
         saveAndReload()
         return reward
     }
@@ -470,6 +478,60 @@ final class LifeTallyStore {
 
     func latestRemainingPositive(on date: Date) -> TallyEntry? {
         remainingPositiveEntries(on: dayKey(date)).max { $0.timestamp < $1.timestamp }
+    }
+
+    func stopwatchStart(for entryTimestamp: Date) -> Date {
+        let defaults = UserDefaults.standard
+        guard abs(defaults.double(forKey: Self.stopwatchEntryKey) - entryTimestamp.timeIntervalSince1970) < 0.001 else {
+            return entryTimestamp
+        }
+        let adjustedStart = defaults.double(forKey: Self.stopwatchStartKey)
+        return adjustedStart > 0 ? Date(timeIntervalSince1970: adjustedStart) : entryTimestamp
+    }
+
+    func setStopwatchPaused(
+        _ paused: Bool,
+        elapsed: TimeInterval? = nil,
+        actionDate: Date = .now
+    ) {
+        guard let entry = latestRemainingPositive(on: actionDate) else { return }
+        let start = stopwatchStart(for: entry.timestamp)
+        guard isStopwatchPaused != paused else { return }
+
+        if paused {
+            stopwatchPausedElapsed = max(0, elapsed ?? actionDate.timeIntervalSince(start))
+        } else {
+            stopwatchPausedElapsed = max(0, elapsed ?? stopwatchPausedElapsed)
+            UserDefaults.standard.set(
+                actionDate.addingTimeInterval(-stopwatchPausedElapsed).timeIntervalSince1970,
+                forKey: Self.stopwatchStartKey
+            )
+        }
+        isStopwatchPaused = paused
+        persistStopwatchState(entryTimestamp: entry.timestamp)
+        changeHandler?()
+    }
+
+    private func loadStopwatchState() {
+        isStopwatchPaused = UserDefaults.standard.bool(forKey: Self.stopwatchPausedKey)
+        stopwatchPausedElapsed = UserDefaults.standard.double(forKey: Self.stopwatchElapsedKey)
+    }
+
+    private func resetStopwatch(for entryTimestamp: Date) {
+        isStopwatchPaused = false
+        stopwatchPausedElapsed = 0
+        let defaults = UserDefaults.standard
+        defaults.set(entryTimestamp.timeIntervalSince1970, forKey: Self.stopwatchEntryKey)
+        defaults.set(entryTimestamp.timeIntervalSince1970, forKey: Self.stopwatchStartKey)
+        defaults.set(false, forKey: Self.stopwatchPausedKey)
+        defaults.set(0, forKey: Self.stopwatchElapsedKey)
+    }
+
+    private func persistStopwatchState(entryTimestamp: Date) {
+        let defaults = UserDefaults.standard
+        defaults.set(entryTimestamp.timeIntervalSince1970, forKey: Self.stopwatchEntryKey)
+        defaults.set(isStopwatchPaused, forKey: Self.stopwatchPausedKey)
+        defaults.set(stopwatchPausedElapsed, forKey: Self.stopwatchElapsedKey)
     }
 
     func hourlyTasks(on date: Date) -> [(hour: Int, tasks: Int)] {

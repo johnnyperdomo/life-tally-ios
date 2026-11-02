@@ -260,7 +260,14 @@ struct TodayCounterCard: View {
                 Text("\(summary.tasks) \(summary.tasks == 1 ? "task" : "tasks")")
                     .font(.footnote.weight(.semibold))
                 Spacer()
-                CompactEntryTimer(entry: store.latestRemainingPositive(on: Date()))
+                let latestEntry = store.latestRemainingPositive(on: Date())
+                CompactEntryTimer(
+                    entry: latestEntry,
+                    stopwatchStart: latestEntry.map { store.stopwatchStart(for: $0.timestamp) },
+                    isPaused: store.isStopwatchPaused,
+                    pausedElapsed: store.stopwatchPausedElapsed,
+                    onTogglePause: { store.setStopwatchPaused(!store.isStopwatchPaused) }
+                )
             }
 
         }
@@ -439,19 +446,39 @@ struct TallyPressStyle: ButtonStyle {
 
 struct CompactEntryTimer: View {
     let entry: TallyEntry?
+    let stopwatchStart: Date?
+    let isPaused: Bool
+    let pausedElapsed: TimeInterval
+    let onTogglePause: () -> Void
 
     var body: some View {
-        if let entry {
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
-                Label(
-                    LifeTallyFormat.preciseDuration(context.date.timeIntervalSince(entry.timestamp)),
-                    systemImage: "timer"
-                )
+        if entry != nil, let stopwatchStart {
+            HStack(spacing: 8) {
+                Label {
+                    if isPaused {
+                        Text(LifeTallyFormat.preciseDuration(pausedElapsed))
+                    } else {
+                        Text(
+                            .currentDate,
+                            format: .stopwatch(startingAt: stopwatchStart, showsHours: false)
+                        )
+                    }
+                } icon: {
+                    Image(systemName: "timer")
+                }
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .accessibilityLabel("Since last entry")
-                .accessibilityValue(LifeTallyFormat.preciseDuration(context.date.timeIntervalSince(entry.timestamp)))
-                .accessibilityAddTraits(.updatesFrequently)
+                .accessibilityValue(isPaused ? LifeTallyFormat.preciseDuration(pausedElapsed) : "Running")
+                .accessibilityAddTraits(isPaused ? [] : .updatesFrequently)
+
+                Button(action: onTogglePause) {
+                    Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(isPaused ? "Resume stopwatch" : "Pause stopwatch")
             }
         } else {
             Label("Ready", systemImage: "timer")

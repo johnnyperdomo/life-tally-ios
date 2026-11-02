@@ -75,8 +75,10 @@ final class PhoneWatchSyncCoordinator: NSObject, WCSessionDelegate {
             completedHabits: completedHabits,
             levelMultiplierTenThousandths: fiveTaskMultiplier
         )
-        let latestEntryTimestamp = store.latestRemainingPositive(on: Date())?
-            .timestamp.timeIntervalSince1970 ?? 0
+        let latestEntry = store.latestRemainingPositive(on: Date())
+        let latestEntryTimestamp = latestEntry.map {
+            store.stopwatchStart(for: $0.timestamp).timeIntervalSince1970
+        } ?? 0
 
         return [
             "lifetimePointsHundredths": store.lifetimePointsHundredths,
@@ -89,6 +91,8 @@ final class PhoneWatchSyncCoordinator: NSObject, WCSessionDelegate {
             "oneTaskRewardHundredths": oneTaskReward,
             "fiveTaskRewardHundredths": fiveTaskReward,
             "latestEntryTimestamp": latestEntryTimestamp,
+            "isStopwatchPaused": store.isStopwatchPaused,
+            "stopwatchPausedElapsed": store.stopwatchPausedElapsed,
             "processedCommandIDs": UserDefaults.standard.stringArray(forKey: Self.processedCommandIDsKey) ?? [],
             "updatedAt": Date.now.timeIntervalSince1970
         ]
@@ -96,7 +100,16 @@ final class PhoneWatchSyncCoordinator: NSObject, WCSessionDelegate {
 
     private func handle(_ message: [String: Any], replyHandler: (([String: Any]) -> Void)? = nil) {
         Task { @MainActor in
-            if let amount = Self.int(message["addTasks"]), amount == 1 || amount == 5 {
+            if let shouldPause = Self.bool(message["setStopwatchPaused"]) {
+                let elapsed = (message["stopwatchElapsed"] as? NSNumber)?.doubleValue
+                let actionDate = (message["stopwatchActionTimestamp"] as? NSNumber)
+                    .map { Date(timeIntervalSince1970: $0.doubleValue) } ?? .now
+                store.setStopwatchPaused(
+                    shouldPause,
+                    elapsed: elapsed,
+                    actionDate: actionDate
+                )
+            } else if let amount = Self.int(message["addTasks"]), amount == 1 || amount == 5 {
                 if let commandID = message["commandID"] as? String {
                     if markCommandAsProcessed(commandID) {
                         _ = store.addTasks(amount)
@@ -130,6 +143,11 @@ final class PhoneWatchSyncCoordinator: NSObject, WCSessionDelegate {
 
     private static func int(_ value: Any?) -> Int? {
         (value as? NSNumber)?.intValue
+    }
+
+    private static func bool(_ value: Any?) -> Bool? {
+        if let value = value as? Bool { return value }
+        return (value as? NSNumber)?.boolValue
     }
 
     nonisolated func session(

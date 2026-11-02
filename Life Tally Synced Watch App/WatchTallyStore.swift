@@ -17,6 +17,8 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         var oneTaskRewardHundredths: Int64
         var fiveTaskRewardHundredths: Int64
         var latestEntryTimestamp: Date?
+        var isStopwatchPaused: Bool?
+        var stopwatchPausedElapsed: TimeInterval?
         var updatedAt: Date
         var isAuthoritative: Bool?
         var syncState: WatchSyncState?
@@ -39,6 +41,8 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
     private(set) var oneTaskRewardHundredths: Int64 = 10_000
     private(set) var fiveTaskRewardHundredths: Int64 = 50_500
     private(set) var latestEntryTimestamp: Date?
+    private(set) var isStopwatchPaused = false
+    private(set) var stopwatchPausedElapsed: TimeInterval = 0
     private(set) var lastUpdated: Date?
     private(set) var isReachable = false
     private(set) var isUpdating = false
@@ -151,6 +155,28 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         sendCommand(message, using: session)
     }
 
+    func setStopwatchPaused(_ paused: Bool) {
+        guard latestEntryTimestamp != nil, isStopwatchPaused != paused else { return }
+        let actionDate = Date.now
+        if paused, let latestEntryTimestamp {
+            stopwatchPausedElapsed = max(0, actionDate.timeIntervalSince(latestEntryTimestamp))
+        } else {
+            latestEntryTimestamp = actionDate.addingTimeInterval(-stopwatchPausedElapsed)
+        }
+        isStopwatchPaused = paused
+        save()
+
+        guard let session, session.activationState == .activated else { return }
+        sendCommand(
+            [
+                "setStopwatchPaused": paused,
+                "stopwatchElapsed": stopwatchPausedElapsed,
+                "stopwatchActionTimestamp": actionDate.timeIntervalSince1970
+            ],
+            using: session
+        )
+    }
+
     private func sendCommand(_ message: [String: Any], using session: WCSession) {
         let commandID = message["commandID"] as? String
         if session.isReachable {
@@ -201,6 +227,8 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         fiveTaskRewardHundredths = Self.fiveTaskReward(startingAt: oneTaskRewardHundredths)
         combinedMultiplierHundredths = Self.increasedReward(combinedMultiplierHundredths, by: amount)
         latestEntryTimestamp = .now
+        isStopwatchPaused = false
+        stopwatchPausedElapsed = 0
         lastUpdated = .now
         hasAuthoritativeData = true
         save()
@@ -235,6 +263,8 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         } else {
             latestEntryTimestamp = nil
         }
+        isStopwatchPaused = Self.bool(payload["isStopwatchPaused"]) ?? false
+        stopwatchPausedElapsed = (payload["stopwatchPausedElapsed"] as? NSNumber)?.doubleValue ?? 0
 
         if let timestamp = payload["updatedAt"] as? TimeInterval {
             lastUpdated = Date(timeIntervalSince1970: timestamp)
@@ -273,6 +303,8 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
         oneTaskRewardHundredths = snapshot.oneTaskRewardHundredths
         fiveTaskRewardHundredths = snapshot.fiveTaskRewardHundredths
         latestEntryTimestamp = snapshot.latestEntryTimestamp
+        isStopwatchPaused = snapshot.isStopwatchPaused ?? false
+        stopwatchPausedElapsed = snapshot.stopwatchPausedElapsed ?? 0
         lastUpdated = snapshot.updatedAt
         hasAuthoritativeData = snapshot.isAuthoritative ?? false
         syncState = snapshot.syncState ?? WatchSyncState()
@@ -294,6 +326,8 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
             oneTaskRewardHundredths: oneTaskRewardHundredths,
             fiveTaskRewardHundredths: fiveTaskRewardHundredths,
             latestEntryTimestamp: latestEntryTimestamp,
+            isStopwatchPaused: isStopwatchPaused,
+            stopwatchPausedElapsed: stopwatchPausedElapsed,
             updatedAt: lastUpdated ?? .now,
             isAuthoritative: hasAuthoritativeData,
             syncState: syncState
@@ -314,6 +348,8 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
                 "combinedMultiplierHundredths": combinedMultiplierHundredths,
                 "oneTaskRewardHundredths": oneTaskRewardHundredths,
                 "latestEntryTimestamp": latestEntryTimestamp?.timeIntervalSince1970 ?? 0,
+                "isStopwatchPaused": isStopwatchPaused,
+                "stopwatchPausedElapsed": stopwatchPausedElapsed,
                 "updatedAt": (lastUpdated ?? .now).timeIntervalSince1970
             ]
             var previous = widgetDefaults.dictionary(forKey: Self.storageKey) ?? [:]
@@ -372,6 +408,11 @@ final class WatchTallyStore: NSObject, WCSessionDelegate {
 
     private static func int(_ value: Any?) -> Int? {
         (value as? NSNumber)?.intValue
+    }
+
+    private static func bool(_ value: Any?) -> Bool? {
+        if let value = value as? Bool { return value }
+        return (value as? NSNumber)?.boolValue
     }
 
     nonisolated func session(
